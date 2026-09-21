@@ -7,6 +7,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
 import android.webkit.RenderProcessGoneDetail;
@@ -25,8 +26,8 @@ public class MainActivity extends Activity {
     @Override
     public void onCreate(Bundle b) {
         super.onCreate(b);
-        hideSystemBars();
         setupWebView();
+        hideSystemBars();
     }
 
     private void setupWebView() {
@@ -63,6 +64,7 @@ public class MainActivity extends Activity {
                     view.destroy();
                     webView = null;
                     setupWebView();
+                    hideSystemBars();
                 }
                 return true;
             }
@@ -101,15 +103,25 @@ public class MainActivity extends Activity {
     }
 
     private void hideSystemBars() {
+        Window window = getWindow();
+        if (window == null) {
+            return;
+        }
+
+        View decor = window.getDecorView();
+        if (decor == null) {
+            return;
+        }
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            WindowInsetsController controller = getWindow().getInsetsController();
+            WindowInsetsController controller = decor.getWindowInsetsController();
             if (controller != null) {
                 controller.hide(WindowInsets.Type.systemBars());
                 controller.setSystemBarsBehavior(
                         WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
             }
         } else {
-            getWindow().getDecorView().setSystemUiVisibility(
+            decor.setSystemUiVisibility(
                     View.SYSTEM_UI_FLAG_FULLSCREEN
                             | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                             | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
