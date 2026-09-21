@@ -16,7 +16,7 @@ on:
         description: "Optional repo path to PNG/JPG icon. Leave as-is to use the built-in icon."
         required: false
         type: string
-        default: "assets/grok_icon.jpg"
+        default: "assets/grok_icon.png"
 
 permissions:
   contents: write
