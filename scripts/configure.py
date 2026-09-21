@@ -5,7 +5,7 @@ from xml.sax.saxutils import escape
 R = Path(__file__).resolve().parents[1]
 name = os.getenv("APP_NAME", "My Web App").strip() or "My Web App"
 url = os.getenv("WEBSITE_URL", "https://example.com").strip()
-icon_path = os.getenv("ICON_PATH", "").strip() or "assets/grok_icon.jpg"
+icon_path = os.getenv("ICON_PATH", "").strip() or "assets/grok_icon.png"
 
 if not re.match(r"^https?://", url):
     raise SystemExit("website_url must start with http:// or https://")
