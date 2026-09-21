@@ -1,0 +1,1 @@
+window.LNK_APK_CONFIG={WORKER_URL:"https://YOUR-WORKER.YOUR-SUBDOMAIN.workers.dev"};
