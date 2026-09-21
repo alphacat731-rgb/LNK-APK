@@ -13,10 +13,10 @@ on:
         required: true
         type: string
       icon_path:
-        description: "Optional repo path to PNG/JPG icon, e.g. assets/icon.png"
+        description: "Optional repo path to PNG/JPG icon. Leave as-is to use the built-in icon."
         required: false
         type: string
-        default: ""
+        default: "assets/grok_icon.jpg"
 
 permissions:
   contents: write
