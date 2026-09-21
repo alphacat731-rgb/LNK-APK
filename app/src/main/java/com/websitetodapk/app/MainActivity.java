@@ -6,8 +6,10 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
+import android.webkit.RenderProcessGoneDetail;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
@@ -24,26 +26,45 @@ public class MainActivity extends Activity {
     public void onCreate(Bundle b) {
         super.onCreate(b);
         hideSystemBars();
+        setupWebView();
+    }
 
+    private void setupWebView() {
         webView = new WebView(this);
         setContentView(webView);
 
         WebSettings s = webView.getSettings();
         s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true);
-        s.setDatabaseEnabled(true);
         s.setSupportZoom(false);
         s.setBuiltInZoomControls(false);
         s.setDisplayZoomControls(false);
         s.setLoadWithOverviewMode(false);
         s.setUseWideViewPort(false);
         s.setMediaPlaybackRequiresUserGesture(false);
-        s.setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
+        s.setSupportMultipleWindows(false);
+        s.setJavaScriptCanOpenWindowsAutomatically(false);
 
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView v, WebResourceRequest r) {
                 return false;
+            }
+
+            @Override
+            public boolean onRenderProcessGone(WebView view, RenderProcessGoneDetail detail) {
+                if (view == webView) {
+                    ViewGroup parent = (ViewGroup) view.getParent();
+                    if (parent != null) {
+                        parent.removeView(view);
+                    }
+                    view.setWebChromeClient(null);
+                    view.setWebViewClient(null);
+                    view.destroy();
+                    webView = null;
+                    setupWebView();
+                }
+                return true;
             }
         });
 
@@ -146,6 +167,10 @@ public class MainActivity extends Activity {
             webView.stopLoading();
             webView.setWebChromeClient(null);
             webView.setWebViewClient(null);
+            ViewGroup parent = (ViewGroup) webView.getParent();
+            if (parent != null) {
+                parent.removeView(webView);
+            }
             webView.destroy();
             webView = null;
         }
