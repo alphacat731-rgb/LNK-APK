@@ -1,29 +1,46 @@
 # LNK-APK
 
-One-tap website → fullscreen Android APK.
+Simple website → fullscreen Android APK builder that works using **GitHub only**.
 
-## How it works
+No Cloudflare Worker, no API token, and no external backend.
 
-Phone → GitHub Pages → Cloudflare Worker → GitHub Actions → APK Release.
+## Build an APK from your phone
 
-The Pages site collects the app name, URL and PNG/JPG icon. The Worker keeps your GitHub token secret and dispatches the Android build. The APK is uploaded to a GitHub Release and the page gives you the download link.
+1. Open the **Actions** tab in this repository.
+2. Select **Build APK**.
+3. Tap **Run workflow**.
+4. Enter:
+   - **App name** — the name shown by Android.
+   - **Website URL** — for example `https://example.com`.
+   - **Icon path** — optional. Upload a PNG/JPG into the repo first, for example `assets/icon.png`, then enter that exact path.
+5. Tap **Run workflow**.
+6. Wait for the workflow to finish.
+7. Open the completed workflow and download **LNK-APK** from the **Artifacts** section.
 
-## Setup
+GitHub supports manually running workflows that use the `workflow_dispatch` trigger from the Actions tab. citehttps://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow
 
-1. Keep this repository on `main`.
-2. Enable **Settings → Pages → GitHub Actions**.
-3. Deploy `worker/src/index.js` to Cloudflare Workers.
-4. In the Worker, add secrets:
-   - `GITHUB_TOKEN`: a fine-grained token for this repo with Actions write + Contents write.
-   - `BUILD_PASSWORD`: your private builder password.
-5. Set Worker variables `GITHUB_OWNER=alphacat731-rgb`, `GITHUB_REPO=LNK-APK`, `GITHUB_WORKFLOW=build-apk.yml`.
-6. Put the Worker URL in `site/config.js`.
-7. Open the GitHub Pages URL on your phone.
+## App behavior
 
-## Result
+The generated APK is a native Android WebView:
 
-The generated app is a native Android WebView with no browser/address/search bar. Android back navigates the site.
+- No browser/address/search bar.
+- Fullscreen immersive mode.
+- Android back button navigates back through the website.
+- JavaScript and DOM storage are enabled for modern sites.
+- HTTP and HTTPS websites are supported.
 
-Each build uses a temporary signing key, so separate builds are separate APK identities. For normal upgrade-in-place behavior, replace the temporary key step with a persistent keystore stored as GitHub Actions secrets.
+## Icon
 
-Only wrap websites you own or are authorized to package.
+PNG, JPG, JPEG, and WebP icons are supported. Keep the uploaded icon reasonably small (under about 60 KB).
+
+If no custom icon is supplied, the project uses its built-in fallback icon.
+
+## Signing
+
+Each build currently uses a temporary signing key. That means separate builds are separate Android signing identities and are not intended as seamless upgrades of one another.
+
+For personal testing and one-off APKs, this is fine. A persistent keystore can be added later if you want update-in-place installs.
+
+## Important
+
+Only package websites you own or are authorized to package.
