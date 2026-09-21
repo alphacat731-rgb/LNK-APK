@@ -17,7 +17,7 @@ No Cloudflare Worker, no API token, and no external backend.
 6. Wait for the workflow to finish.
 7. Open the completed workflow and download **LNK-APK** from the **Artifacts** section.
 
-GitHub supports manually running workflows that use the `workflow_dispatch` trigger from the Actions tab. citehttps://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow
+GitHub supports manually running workflows that use the `workflow_dispatch` trigger from the Actions tab.
 
 ## App behavior
 
