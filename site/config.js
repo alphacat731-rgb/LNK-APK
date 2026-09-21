@@ -1,1 +1,0 @@
-window.LNK_APK_CONFIG={WORKER_URL:"https://lnk-apk.alphacat731.workers.dev"};
