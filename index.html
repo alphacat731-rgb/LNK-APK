@@ -9,145 +9,37 @@
 :root{color-scheme:dark;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
 *{box-sizing:border-box}body{margin:0;min-height:100vh;background:#0b0b0f;color:#f7f7fa;display:grid;place-items:center;padding:18px}
 .card{width:min(100%,560px);background:#15151b;border:1px solid #292933;border-radius:24px;padding:24px}
-h1{margin:0 0 6px}p{color:#aaa;line-height:1.45}
-label{display:block;font-size:13px;color:#bbb;margin:16px 0 7px}
-input{width:100%;padding:14px;border-radius:13px;border:1px solid #343440;background:#0d0d12;color:#fff;font-size:16px}
-button{width:100%;padding:15px;border:0;border-radius:13px;font-weight:800;cursor:pointer;background:#fff;color:#111;margin-top:18px}
-button:disabled{opacity:.5;cursor:wait}.status{margin-top:18px;padding:14px;border-radius:13px;background:#0e0e13;display:none}
-.status.show{display:block}.progress{height:8px;background:#292933;border-radius:99px;overflow:hidden;margin-top:12px}
-.bar{height:100%;width:0;background:#fff;transition:width .3s}.success{margin-top:14px;padding:14px;border-radius:13px;background:#102014}
-.download{display:block;text-align:center;text-decoration:none;background:#fff;color:#111;padding:14px;border-radius:12px;font-weight:800;margin-top:12px}
-.small{font-size:12px;color:#777;margin-top:14px}.error{color:#ff9b9b}
+h1{margin:0 0 6px}p,li{color:#aaa;line-height:1.5}
+ol{padding-left:22px}.step{margin:18px 0;padding:15px;border-radius:14px;background:#0e0e13}
+a,button{display:block;width:100%;padding:15px;border-radius:13px;text-align:center;font-weight:800;text-decoration:none;border:0}
+a{background:#fff;color:#111}code{background:#292933;padding:2px 6px;border-radius:6px;color:#fff}
+.small{font-size:12px;color:#777;margin-top:14px}
 </style>
 </head>
 <body>
 <div class="card">
 <h1>🔗 LNK-APK</h1>
-<p>Turn a website into a clean fullscreen Android app. No browser/search bar.</p>
-<label>App name</label><input id="name" maxlength="30" placeholder="My Website">
-<label>Website URL</label><input id="url" inputmode="url" placeholder="https://example.com">
-<label>App icon (PNG/JPG)</label><input id="icon" type="file" accept="image/png,image/jpeg,.png,.jpg,.jpeg">
-<label>Build password</label><input id="password" type="password" placeholder="Your private build password">
-<button id="build" type="button">BUILD APK</button>
-<div class="status" id="status">
-<b id="statusText">Preparing…</b>
-<div class="progress"><div class="bar" id="bar"></div></div>
-<div class="small" id="statusSmall"></div>
+<p>Turn a website into a clean fullscreen Android app. No browser/search bar. No Cloudflare. ❤️</p>
+<div class="step">
+<strong>1. Add your icon (optional)</strong>
+<p>In your GitHub repo, upload a PNG/JPG into <code>assets/</code>. For example: <code>assets/icon.png</code>.</p>
 </div>
-<div class="success" id="success" hidden><b>Your APK is ready.</b><a class="download" id="download" target="_blank" rel="noopener">DOWNLOAD APK</a></div>
-<div class="small">The icon is resized in your browser before upload.</div>
+<div class="step">
+<strong>2. Open the APK builder</strong>
+<p>GitHub will ask for the app name, website URL, and optional icon path.</p>
+<a href="https://github.com/alphacat731-rgb/LNK-APK/actions/workflows/build-apk.yml" target="_blank" rel="noopener">OPEN APK BUILDER</a>
 </div>
-<script src="./site/config.js"></script>
-<script>
-const $=id=>document.getElementById(id);
-let selectedFile=null;
-$("icon").addEventListener("change",e=>{selectedFile=e.target.files[0]||null});
-
-function showStatus(text,small="",progress=0,error=false){
-  $("status").classList.add("show");
-  $("statusText").textContent=text;
-  $("statusText").className=error?"error":"";
-  $("statusSmall").textContent=small;
-  $("bar").style.width=progress+"%";
-}
-
-$("build").addEventListener("click",startBuild);
-
-async function startBuild(){
-  const worker=((window.LNK_APK_CONFIG||{}).WORKER_URL||"").trim();
-  const name=$("name").value.trim()||"My Web App";
-  const siteUrl=$("url").value.trim();
-  const password=$("password").value;
-
-  showStatus("Checking settings…","",3);
-
-  if(!worker||worker.includes("YOUR-WORKER")){
-    showStatus("Backend not connected","Open site/config.js and set your Cloudflare Worker URL.",0,true);
-    return;
-  }
-  try{
-    const parsed=new URL(siteUrl);
-    if(!["http:","https:"].includes(parsed.protocol)) throw new Error();
-  }catch{
-    showStatus("Invalid website URL","Use a complete URL such as https://example.com",0,true);
-    return;
-  }
-  if(!password){
-    showStatus("Build password required","Enter the password configured on your Worker.",0,true);
-    return;
-  }
-
-  $("build").disabled=true;
-  $("build").textContent="BUILDING…";
-  $("success").hidden=true;
-
-  try{
-    let icon="";
-    if(selectedFile){
-      showStatus("Processing icon…","Resizing and compressing your image.",10);
-      icon=await b64(await smallWebp(selectedFile));
-    }
-
-    showStatus("Starting Android build…","Sending the build request to GitHub.",20);
-    const r=await fetch(worker.replace(/\/$/,"")+"/api/build",{
-      method:"POST",
-      headers:{"content-type":"application/json"},
-      body:JSON.stringify({name,url:siteUrl,password,icon,mime:"image/webp"})
-    });
-    const d=await r.json().catch(()=>({}));
-    if(!r.ok) throw new Error(d.error||"The build server rejected the request.");
-    if(!d.id) throw new Error("The server did not return a build ID.");
-
-    showStatus("Build started","GitHub Actions is compiling your APK.",30);
-
-    for(let i=0;i<90;i++){
-      await new Promise(resolve=>setTimeout(resolve,4000));
-      const q=await fetch(worker.replace(/\/$/,"")+"/api/status?id="+encodeURIComponent(d.id),{
-        headers:{"X-Build-Password":password}
-      });
-      const s=await q.json().catch(()=>({}));
-      if(s.status==="ready"){
-        showStatus("APK ready!","Your download is ready below.",100);
-        $("download").href=s.download_url;
-        $("success").hidden=false;
-        $("build").textContent="BUILD ANOTHER APK";
-        $("build").disabled=false;
-        return;
-      }
-      if(s.status==="failed") throw new Error(s.error||"GitHub reported a failed build.");
-      showStatus("Building APK…","Still working. This can take a few minutes.",Math.min(90,30+i));
-    }
-    throw new Error("Build timed out while waiting for GitHub Actions.");
-  }catch(e){
-    showStatus("Build failed",e.message||String(e),0,true);
-    $("build").textContent="TRY AGAIN";
-    $("build").disabled=false;
-  }
-}
-
-async function smallWebp(file){
-  if(file.size>10*1024*1024) throw new Error("Icon must be smaller than 10 MB.");
-  const b=await createImageBitmap(file),max=256;
-  const scale=Math.min(1,max/Math.max(b.width,b.height));
-  const c=document.createElement("canvas");
-  c.width=Math.max(1,Math.round(b.width*scale));
-  c.height=Math.max(1,Math.round(b.height*scale));
-  c.getContext("2d").drawImage(b,0,0,c.width,c.height);
-  for(const q of [.82,.72,.62,.52,.42]){
-    const x=await new Promise(resolve=>c.toBlob(resolve,"image/webp",q));
-    if(x&&x.size<42000)return x;
-  }
-  throw new Error("Icon is too large or complex. Try a simpler image.");
-}
-
-function b64(blob){
-  return new Promise((resolve,reject)=>{
-    const f=new FileReader();
-    f.onload=()=>resolve(f.result.split(",")[1]);
-    f.onerror=reject;
-    f.readAsDataURL(blob);
-  });
-}
-</script>
+<div class="step">
+<strong>3. Run the workflow</strong>
+<ol>
+<li>Tap <b>Run workflow</b>.</li>
+<li>Enter your app name.</li>
+<li>Enter the full website URL, including <code>https://</code>.</li>
+<li>For your uploaded icon, enter its path, e.g. <code>assets/icon.png</code>.</li>
+<li>Tap <b>Run workflow</b>.</li>
+</ol>
+</div>
+<div class="small">When the build finishes, open the completed workflow and download the APK from its Artifacts section.</div>
+</div>
 </body>
 </html>
