@@ -1,4 +1,4 @@
-import base64, os, re
+import os, re
 from pathlib import Path
 from xml.sax.saxutils import escape
 
@@ -10,12 +10,12 @@ icon_path = os.getenv("ICON_PATH", "").strip()
 if not re.match(r"^https?://", url):
     raise SystemExit("website_url must start with http:// or https://")
 
-u = url.replace("\\", "\\\\").replace('"', '\\\"')
+u = url.replace("\\", "\\\\").replace('"', '\\"')
 gradle = f'''plugins {{ id("com.android.application") }}
 android {{ namespace="com.websitetodapk.app"; compileSdk=35
     defaultConfig {{ applicationId="com.websitetodapk.app"; minSdk=23; targetSdk=35; versionCode=1; versionName="1.0"; buildConfigField("String","WEBSITE_URL","\\\"{u}\\\""); buildConfigField("boolean","FULLSCREEN","true") }}
     buildFeatures {{ buildConfig=true }}
-    buildTypes {{ release {{ minifyEnabled=false }} }}
+    buildTypes {{ release {{ isMinifyEnabled = false }} }}
 }}
 '''
 (R / "app/build.gradle.kts").write_text(gradle)
