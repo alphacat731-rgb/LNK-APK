@@ -1,7 +1,0 @@
-name="lnk-apk-worker"
-main="src/index.js"
-compatibility_date="2026-09-21"
-[vars]
-GITHUB_OWNER="alphacat731-rgb"
-GITHUB_REPO="LNK-APK"
-GITHUB_WORKFLOW="build-apk.yml"
