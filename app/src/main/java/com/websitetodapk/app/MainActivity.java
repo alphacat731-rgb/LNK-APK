@@ -700,6 +700,7 @@ public class MainActivity extends Activity {
             viewer.addView(image, 0, ip);
         }
         root.addView(viewer, new FrameLayout.LayoutParams(-1, -1));
+        root.setTag(viewer);
         hideSystemBars();
     }
 
@@ -786,7 +787,11 @@ public class MainActivity extends Activity {
         if (tag != null && tag.getParent() == root) {
             root.removeView(tag);
             root.setTag(null);
-            showLauncher();
+            if (tag instanceof FrameLayout) {
+                showGallery();
+            } else {
+                showLauncher();
+            }
             return;
         }
         if (currentEditor >= 0 && webView != null && webView.getVisibility() == View.VISIBLE) {
