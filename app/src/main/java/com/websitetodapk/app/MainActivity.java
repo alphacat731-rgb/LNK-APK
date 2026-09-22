@@ -112,7 +112,7 @@ public class MainActivity extends Activity {
         launcher.removeAllViews();
 
         TextView title = new TextView(this);
-        title.setText("GrokBot Avatar Hub");
+        title.setText(getString(com.websitetodapk.app.R.string.app_name));
         title.setTextColor(textColor);
         title.setTextSize(26);
         title.setGravity(Gravity.CENTER);
