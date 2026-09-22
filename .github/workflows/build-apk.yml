@@ -17,7 +17,7 @@ on:
           Editor 2 | https://avatars.bible-strong.app/
           Editor 3 | https://grokbots.ai/studio
       icon_path:
-        description: "Optional repo path to PNG/JPG icon"
+        description: "Optional repo path to PNG/JPG/WebP icon"
         required: false
         type: string
         default: "assets/grok_icon.webp"
@@ -99,6 +99,8 @@ jobs:
         run: |
           test -s app/src/main/assets/apps.json
           grep -q "isMinifyEnabled = false" app/build.gradle.kts
+          test -f app/src/main/res/drawable-nodpi/grokbot_launcher_icon.webp || test -f app/src/main/res/drawable-nodpi/grokbot_launcher_icon.png || test -f app/src/main/res/drawable-nodpi/grokbot_launcher_icon.jpg || test -f app/src/main/res/drawable-nodpi/grokbot_launcher_icon.jpeg
+          test ! -e app/src/main/res/drawable/app_icon.xml
 
       - name: Build release APK and AAB
         run: gradle assembleRelease bundleRelease
