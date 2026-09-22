@@ -123,6 +123,20 @@ jobs:
           $ANDROID_HOME/build-tools/36.0.0/apksigner sign --ks "$KS" --ks-pass pass:"$KSP" --key-pass pass:"$KP" --out app-release.apk app/build/outputs/apk/release/app-release-unsigned.apk
           jarsigner -keystore "$KS" -storepass "$KSP" -keypass "$KP" app/build/outputs/bundle/release/app-release.aab "$ALIAS"
 
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION_NAME: ${{ inputs.version_name }}
+        run: |
+          TAG="v${VERSION_NAME}"
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" \
+              --title "GrokBot Avatar Hub ${VERSION_NAME}" \
+              --notes "Download GrokBot Avatar Hub for Android. The APK is ready to install directly from GitHub."
+          fi
+          gh release upload "$TAG" app-release.apk app/build/outputs/bundle/release/app-release.aab --clobber
+
       - name: Upload release files
         uses: actions/upload-artifact@v4
         with:
