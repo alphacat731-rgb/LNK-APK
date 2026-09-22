@@ -31,6 +31,16 @@ on:
         required: true
         type: string
         default: "#202020"
+      version_name:
+        description: "Release version name"
+        required: true
+        type: string
+        default: "1.0"
+      version_code:
+        description: "Release version code"
+        required: true
+        type: string
+        default: "1"
       text_color:
         description: "Launcher text hex color"
         required: true
@@ -59,14 +69,14 @@ jobs:
           echo "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
           echo "$ANDROID_SDK_ROOT/platform-tools" >> "$GITHUB_PATH"
           echo "$ANDROID_SDK_ROOT/emulator" >> "$GITHUB_PATH"
-          echo "$ANDROID_SDK_ROOT/build-tools/35.0.0" >> "$GITHUB_PATH"
+          echo "$ANDROID_SDK_ROOT/build-tools/36.0.0" >> "$GITHUB_PATH"
 
       - name: Accept Android licenses
         run: yes | sdkmanager --licenses >/dev/null || true
 
       - name: Install Android SDK packages
         run: |
-          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+          sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -81,6 +91,8 @@ jobs:
           BACKGROUND_COLOR: ${{ inputs.background_color }}
           CARD_COLOR: ${{ inputs.card_color }}
           TEXT_COLOR: ${{ inputs.text_color }}
+          VERSION_NAME: ${{ inputs.version_name }}
+          VERSION_CODE: ${{ inputs.version_code }}
         run: python3 scripts/configure.py
 
       - name: Verify generated launcher data
@@ -88,18 +100,32 @@ jobs:
           test -s app/src/main/assets/apps.json
           grep -q "isMinifyEnabled = false" app/build.gradle.kts
 
-      - name: Build unsigned APK
-        run: gradle assembleRelease
+      - name: Build release APK and AAB
+        run: gradle assembleRelease bundleRelease
 
-      - name: Generate temporary signing key
-        run: keytool -genkeypair -keystore build.keystore -alias lnkapk -storepass android -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=LNK-APK"
+      - name: Sign release APK/AAB
+        env:
+          RELEASE_KEYSTORE_BASE64: \${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          RELEASE_KEYSTORE_PASSWORD: \${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: \${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: \${{ secrets.RELEASE_KEY_PASSWORD }}
+        run: |
+          if [ -z "$RELEASE_KEYSTORE_BASE64" ]; then
+            echo "Release keystore secrets are not configured; creating a temporary key for testing only."
+            keytool -genkeypair -keystore build.keystore -alias lnkapk -storepass android -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=LNK-APK"
+            KS=build.keystore; KSP=android; ALIAS=lnkapk; KP=android
+          else
+            echo "$RELEASE_KEYSTORE_BASE64" | base64 --decode > build.keystore
+            KS=build.keystore; KSP="$RELEASE_KEYSTORE_PASSWORD"; ALIAS="$RELEASE_KEY_ALIAS"; KP="$RELEASE_KEY_PASSWORD"
+          fi
+          $ANDROID_HOME/build-tools/36.0.0/apksigner sign --ks "$KS" --ks-pass pass:"$KSP" --key-pass pass:"$KP" --out app-release.apk app/build/outputs/apk/release/app-release-unsigned.apk
+          jarsigner -keystore "$KS" -storepass "$KSP" -keypass "$KP" app/build/outputs/bundle/release/app-release.aab "$ALIAS"
 
-      - name: Sign APK
-        run: $ANDROID_HOME/build-tools/35.0.0/apksigner sign --ks build.keystore --ks-pass pass:android --key-pass pass:android --out app-release.apk app/build/outputs/apk/release/app-release-unsigned.apk
-
-      - name: Upload APK
+      - name: Upload release files
         uses: actions/upload-artifact@v4
         with:
-          name: LNK-APK
-          path: app-release.apk
+          name: LNK-APK-\${{ inputs.version_name }}
+          path: |
+            app-release.apk
+            app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
