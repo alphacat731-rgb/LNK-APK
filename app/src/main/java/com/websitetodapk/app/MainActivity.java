@@ -326,6 +326,40 @@ public class MainActivity extends Activity {
         return box;
     }
 
+    private void animateLauncherEntrance() {
+        launcher.setAlpha(0f);
+        launcher.setTranslationY(dp(10));
+        launcher.animate().alpha(1f).translationY(0f)
+                .setDuration(420)
+                .setInterpolator(new android.view.animation.DecelerateInterpolator())
+                .start();
+    }
+
+    private void animateCard(View v, long delay) {
+        v.setAlpha(0f);
+        v.setTranslationY(dp(16));
+        v.setScaleX(0.97f);
+        v.setScaleY(0.97f);
+        v.animate().alpha(1f).translationY(0f).scaleX(1f).scaleY(1f)
+                .setStartDelay(120 + delay)
+                .setDuration(380)
+                .setInterpolator(new android.view.animation.DecelerateInterpolator())
+                .start();
+    }
+
+    private void pressAnimation(View view, View.OnClickListener action) {
+        view.animate().scaleX(0.96f).scaleY(0.96f)
+                .setDuration(85)
+                .setInterpolator(new android.view.animation.DecelerateInterpolator())
+                .withEndAction(() -> view.animate().scaleX(1f).scaleY(1f)
+                        .setDuration(170)
+                        .setInterpolator(new android.view.animation.OvershootInterpolator(1.4f))
+                        .withEndAction(() -> {
+                            if (action != null) action.onClick(view);
+                        }).start())
+                .start();
+    }
+
     private LinearLayout roundedPanel(int radius, int color) {
         LinearLayout panel = new LinearLayout(this);
         GradientDrawable g = new GradientDrawable();
