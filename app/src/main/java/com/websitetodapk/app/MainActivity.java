@@ -269,12 +269,35 @@ public class MainActivity extends Activity {
     }
 
     private void injectBlobDownloadBridge(WebView v) {
-        String js = "(function(){if(window.__grokDownloadHook)return;window.__grokDownloadHook=true;" +
-                "document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a');" +
-                "if(!a||!a.href||a.href.indexOf('blob:')!==0)return;" +
-                "var name=(a.download||'avatar');fetch(a.href).then(function(r){return r.blob()}).then(function(b){" +
-                "var fr=new FileReader();fr.onloadend=function(){AndroidDownload.save(fr.result,name,b.type)};fr.readAsDataURL(b);" +
-                "}).catch(function(){});},true);})();";
+        String js = "(function(){" +
+                "if(window.__grokDownloadHook)return;" +
+                "window.__grokDownloadHook=true;" +
+                "function saveUrl(url,name){" +
+                "if(!url||(!url.startsWith('blob:')&&!url.startsWith('data:')))return false;" +
+                "if(url.startsWith('data:')){AndroidDownload.save(url,name||'avatar','');return true;}" +
+                "fetch(url).then(function(r){return r.blob()}).then(function(b){" +
+                "var fr=new FileReader();" +
+                "fr.onloadend=function(){AndroidDownload.save(fr.result,name||'avatar',b.type||'application/octet-stream')};" +
+                "fr.readAsDataURL(b);" +
+                "}).catch(function(){});" +
+                "return true;" +
+                "}" +
+                "document.addEventListener('click',function(e){" +
+                "var a=e.target.closest&&e.target.closest('a');" +
+                "if(!a)return;" +
+                "if(saveUrl(a.href,a.download))e.preventDefault();" +
+                "},true);" +
+                "var oldClick=HTMLAnchorElement.prototype.click;" +
+                "HTMLAnchorElement.prototype.click=function(){" +
+                "if(saveUrl(this.href,this.download))return;" +
+                "return oldClick.apply(this,arguments);" +
+                "};" +
+                "var oldOpen=window.open;" +
+                "window.open=function(url,target,features){" +
+                "if(typeof url==='string'&&saveUrl(url,'avatar'))return null;" +
+                "return oldOpen.apply(window,arguments);" +
+                "};" +
+                "})();";
         v.evaluateJavascript(js, null);
     }
 
