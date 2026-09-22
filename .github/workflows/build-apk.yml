@@ -4,19 +4,38 @@ on:
   workflow_dispatch:
     inputs:
       app_name:
-        description: "Name shown under the Android app icon"
+        description: "Launcher name shown under the Android app icon"
         required: true
         type: string
-        default: "My Web App"
-      website_url:
-        description: "Website URL, including https://"
+        default: "GrokBot Avatar Hub"
+      sites:
+        description: "One editor per line: Editor 1 | https://example.com"
         required: true
         type: string
+        default: |-
+          Editor 1 | https://bloub.vercel.app/
+          Editor 2 | https://avatars.bible-strong.app/
+          Editor 3 | https://grokbots.ai/studio
       icon_path:
-        description: "Optional repo path to PNG/JPG icon. Leave as-is to use the built-in icon."
+        description: "Optional repo path to PNG/JPG icon"
         required: false
         type: string
         default: "assets/grok_icon.png"
+      background_color:
+        description: "Launcher background hex color"
+        required: true
+        type: string
+        default: "#111111"
+      card_color:
+        description: "Launcher card hex color"
+        required: true
+        type: string
+        default: "#202020"
+      text_color:
+        description: "Launcher text hex color"
+        required: true
+        type: string
+        default: "#FFFFFF"
 
 permissions:
   contents: write
@@ -57,9 +76,17 @@ jobs:
       - name: Configure app
         env:
           APP_NAME: ${{ inputs.app_name }}
-          WEBSITE_URL: ${{ inputs.website_url }}
+          SITES: ${{ inputs.sites }}
           ICON_PATH: ${{ inputs.icon_path }}
+          BACKGROUND_COLOR: ${{ inputs.background_color }}
+          CARD_COLOR: ${{ inputs.card_color }}
+          TEXT_COLOR: ${{ inputs.text_color }}
         run: python3 scripts/configure.py
+
+      - name: Verify generated launcher data
+        run: |
+          test -s app/src/main/assets/apps.json
+          grep -q "isMinifyEnabled = false" app/build.gradle.kts
 
       - name: Build unsigned APK
         run: gradle assembleRelease
