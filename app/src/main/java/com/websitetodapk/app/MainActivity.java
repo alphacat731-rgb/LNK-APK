@@ -462,8 +462,9 @@ public class MainActivity extends Activity {
         t.setGravity(Gravity.CENTER);
         if (active) {
             GradientDrawable g = new GradientDrawable();
-            g.setColor(accentColor());
-            g.setCornerRadius(dp(17));
+            g.setColor(Color.rgb(32, 32, 32));
+            g.setCornerRadius(dp(8));
+            g.setStroke(dp(1), withAlpha(Color.WHITE, 18));
             t.setBackground(g);
         }
         return t;
@@ -1143,18 +1144,3 @@ public class MainActivity extends Activity {
         }
         showLauncher();
     }
-
-    @Override
-    protected void onDestroy() {
-        if (webView != null) {
-            webView.stopLoading();
-            webView.setWebChromeClient(null);
-            webView.setWebViewClient(null);
-            ViewGroup parent = (ViewGroup) webView.getParent();
-            if (parent != null) parent.removeView(webView);
-            webView.destroy();
-            webView = null;
-        }
-        super.onDestroy();
-    }
-}
