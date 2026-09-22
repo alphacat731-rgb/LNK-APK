@@ -7,7 +7,7 @@ from xml.sax.saxutils import escape
 R = Path(__file__).resolve().parents[1]
 name = os.getenv("APP_NAME", "GrokBot Avatar Hub").strip() or "GrokBot Avatar Hub"
 sites_raw = os.getenv("SITES", "").strip()
-icon_path = os.getenv("ICON_PATH", "").strip() or "assets/grok_icon.webp"
+icon_path = os.getenv("ICON_PATH", "").strip() or "assets/grok_icon.jpg"
 background = os.getenv("BACKGROUND_COLOR", "#111111").strip()
 card = os.getenv("CARD_COLOR", "#202020").strip()
 text_color = os.getenv("TEXT_COLOR", "#FFFFFF").strip()
