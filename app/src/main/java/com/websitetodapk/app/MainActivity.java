@@ -132,7 +132,7 @@ public class MainActivity extends Activity {
 
         LinearLayout content = new LinearLayout(this);
         content.setOrientation(LinearLayout.VERTICAL);
-        content.setPadding(dp(12), dp(10), dp(12), dp(18));
+        content.setPadding(dp(12), dp(10), dp(12), dp(105));
 
         // Header
         LinearLayout header = new LinearLayout(this);
@@ -176,7 +176,7 @@ public class MainActivity extends Activity {
         lp.leftMargin = dp(8);
         heroActions.addView(library, lp);
         hero.addView(heroActions, new LinearLayout.LayoutParams(-1, dp(38)));
-        LinearLayout.LayoutParams heroP = new LinearLayout.LayoutParams(-1, dp(128));
+        LinearLayout.LayoutParams heroP = new LinearLayout.LayoutParams(-1, dp(154));
         heroP.topMargin = dp(8);
         content.addView(hero, heroP);
 
