@@ -7,7 +7,7 @@ from xml.sax.saxutils import escape
 R = Path(__file__).resolve().parents[1]
 name = os.getenv("APP_NAME", "GrokBot Avatar Hub").strip() or "GrokBot Avatar Hub"
 sites_raw = os.getenv("SITES", "").strip()
-icon_path = os.getenv("ICON_PATH", "").strip() or "assets/grok_icon.png"
+icon_path = os.getenv("ICON_PATH", "").strip() or "assets/grok_icon.webp"
 background = os.getenv("BACKGROUND_COLOR", "#111111").strip()
 card = os.getenv("CARD_COLOR", "#202020").strip()
 text_color = os.getenv("TEXT_COLOR", "#FFFFFF").strip()
@@ -77,9 +77,23 @@ if icon_path:
     if len(raw) > 60000:
         raise SystemExit("Icon file is too large; use an image under 60 KB")
     ext = "webp" if p.suffix.lower() == ".webp" else ("png" if p.suffix.lower() == ".png" else "jpg")
-    out = R / f"app/src/main/res/drawable/app_icon.{ext}"
+    drawable_dir = R / "app/src/main/res/drawable-nodpi"
+    drawable_dir.mkdir(parents=True, exist_ok=True)
+    out = drawable_dir / f"grokbot_launcher_icon.{ext}"
     out.write_bytes(raw)
-    for old in ["app_icon.xml", "app_icon.webp", "app_icon.png", "app_icon.jpg", "app_icon.jpeg"]:
-        q = R / "app/src/main/res/drawable" / old
-        if q.exists() and q != out:
-            q.unlink()
+
+    # Keep the launcher icon uniquely named and density-independent.
+    # Remove legacy icon resources so stale fallbacks cannot be packaged.
+    for directory in [
+        R / "app/src/main/res/drawable",
+        R / "app/src/main/res/drawable-nodpi",
+    ]:
+        for old in [
+            "app_icon.xml", "app_icon.webp", "app_icon.png",
+            "app_icon.jpg", "app_icon.jpeg",
+            "grokbot_launcher_icon.webp", "grokbot_launcher_icon.png",
+            "grokbot_launcher_icon.jpg", "grokbot_launcher_icon.jpeg",
+        ]:
+            q = directory / old
+            if q.exists() and q != out:
+                q.unlink()
