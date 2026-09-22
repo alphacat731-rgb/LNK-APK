@@ -213,6 +213,8 @@ public class MainActivity extends Activity {
         s.setJavaScriptCanOpenWindowsAutomatically(false);
         s.setAllowFileAccess(true);
 
+        addJavascriptBridge();
+
         webView.setDownloadListener((url, userAgent, contentDisposition, mimeType, contentLength) ->
                 downloadUrl(url, userAgent, contentDisposition, mimeType));
 
@@ -494,14 +496,40 @@ public class MainActivity extends Activity {
     }
 
     private void openMedia(File file) {
-        Intent i = new Intent(Intent.ACTION_VIEW);
+        FrameLayout viewer = new FrameLayout(this);
+        viewer.setBackgroundColor(Color.BLACK);
+
+        Button close = new Button(this);
+        close.setText("Back");
+        close.setOnClickListener(v -> {
+            root.removeView(viewer);
+            hideSystemBars();
+        });
+        FrameLayout.LayoutParams cp = new FrameLayout.LayoutParams(dp(90), dp(52), Gravity.TOP | Gravity.END);
+        cp.setMargins(0, dp(12), dp(12), 0);
+        viewer.addView(close, cp);
+
         String n = file.getName().toLowerCase(Locale.US);
-        String mime = n.endsWith(".mp4") ? "video/mp4" : n.endsWith(".gif") ? "image/gif" : n.endsWith(".webm") ? "video/webm" : "image/*";
-        i.setDataAndType(Uri.fromFile(file), mime);
-        i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        try { startActivity(i); } catch (Exception e) {
-            Toast.makeText(this, "No app can open this file", Toast.LENGTH_SHORT).show();
+        if (n.endsWith(".mp4") || n.endsWith(".webm")) {
+            android.widget.VideoView video = new android.widget.VideoView(this);
+            video.setVideoURI(Uri.fromFile(file));
+            video.setMediaController(new android.widget.MediaController(this));
+            video.setOnPreparedListener(mp -> mp.setLooping(false));
+            FrameLayout.LayoutParams vp = new FrameLayout.LayoutParams(-1, -1);
+            vp.gravity = Gravity.CENTER;
+            viewer.addView(video, 0, vp);
+            video.start();
+        } else {
+            ImageView image = new ImageView(this);
+            image.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            android.graphics.drawable.Drawable d = android.graphics.drawable.Drawable.createFromPath(file.getAbsolutePath());
+            image.setImageDrawable(d);
+            FrameLayout.LayoutParams ip = new FrameLayout.LayoutParams(-1, -1);
+            ip.gravity = Gravity.CENTER;
+            viewer.addView(image, 0, ip);
         }
+        root.addView(viewer, new FrameLayout.LayoutParams(-1, -1));
+        hideSystemBars();
     }
 
     private String readAsset(String name) throws Exception {
