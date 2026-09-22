@@ -14,6 +14,10 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
+import android.view.animation.DecelerateInterpolator;
+import android.view.animation.OvershootInterpolator;
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
 import android.webkit.CookieManager;
 import android.webkit.DownloadListener;
 import android.webkit.RenderProcessGoneDetail;
@@ -118,6 +122,8 @@ public class MainActivity extends Activity {
         launcher.setVisibility(View.VISIBLE);
         launcher.setBackgroundColor(bgColor);
         launcher.removeAllViews();
+        launcher.setAlpha(0f);
+        launcher.setTranslationY(dp(12));
 
         TextView title = new TextView(this);
         title.setText(getString(com.websitetodapk.app.R.string.app_name));
@@ -149,9 +155,9 @@ public class MainActivity extends Activity {
 
         addRecentSection();
 
-        Button settings = new Button(this);
-        settings.setText("⚙ Settings & About");
-        settings.setOnClickListener(v -> showSettings());
+        TextView settings = new TextView(this);
+        styleActionButton(settings, "⚙  Settings & About");
+        settings.setOnClickListener(v -> pressAnimation(settings, v2 -> showSettings()));
         launcher.addView(settings, new LinearLayout.LayoutParams(-1, dp(48)));
 
         TextView hint = new TextView(this);
@@ -160,18 +166,25 @@ public class MainActivity extends Activity {
         hint.setTextSize(12);
         hint.setGravity(Gravity.CENTER);
         launcher.addView(hint, new LinearLayout.LayoutParams(-1, dp(44)));
+
+        animateLauncherEntrance();
     }
 
     private void addCard(GridLayout grid, String label, int index, View.OnClickListener click) {
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
         card.setGravity(Gravity.CENTER);
-        card.setPadding(dp(12), dp(12), dp(12), dp(12));
+        card.setPadding(dp(14), dp(14), dp(14), dp(12));
         GradientDrawable bg = new GradientDrawable();
         bg.setColor(cardColor);
-        bg.setCornerRadius(dp(22));
+        bg.setCornerRadius(dp(24));
+        bg.setStroke(dp(1), withAlpha(textColor, 18));
         card.setBackground(bg);
-        card.setOnClickListener(click);
+        card.setElevation(dp(3));
+        card.setOnClickListener(v -> {
+            pressAnimation(card, click);
+        });
+        card.setOnLongClickListener(v -> { pressAnimation(card, null); return true; });
 
         TextView badge = new TextView(this);
         badge.setText(index < editors.size() ? String.valueOf(index + 1) : "★");
@@ -187,7 +200,8 @@ public class MainActivity extends Activity {
         t.setTextSize(17);
         t.setGravity(Gravity.CENTER);
         t.setTypeface(null, android.graphics.Typeface.BOLD);
-        card.addView(t, new LinearLayout.LayoutParams(-1, dp(54)));
+        card.addView(t, new LinearLayout.LayoutParams(-1, dp(48)));
+        animateCard(card, index * 70L);
 
         GridLayout.LayoutParams cp = new GridLayout.LayoutParams();
         cp.width = 0;
@@ -196,6 +210,45 @@ public class MainActivity extends Activity {
         cp.rowSpec = GridLayout.spec(index / 2);
         cp.setMargins(dp(7), dp(7), dp(7), dp(7));
         grid.addView(card, cp);
+    }
+
+    private void animateLauncherEntrance() {
+        launcher.animate().alpha(1f).translationY(0f)
+                .setDuration(420).setInterpolator(new DecelerateInterpolator()).start();
+    }
+
+    private void animateCard(View v, long delay) {
+        v.setAlpha(0f);
+        v.setTranslationY(dp(18));
+        v.setScaleX(0.96f);
+        v.setScaleY(0.96f);
+        v.animate().alpha(1f).translationY(0f).scaleX(1f).scaleY(1f)
+                .setStartDelay(120 + delay).setDuration(420)
+                .setInterpolator(new DecelerateInterpolator()).start();
+    }
+
+    private void pressAnimation(View view, View.OnClickListener action) {
+        view.animate().scaleX(0.96f).scaleY(0.96f).setDuration(90)
+                .setInterpolator(new DecelerateInterpolator())
+                .withEndAction(() -> view.animate().scaleX(1f).scaleY(1f)
+                        .setDuration(180).setInterpolator(new OvershootInterpolator(1.5f))
+                        .withEndAction(() -> { if (action != null) action.onClick(view); }).start())
+                .start();
+    }
+
+    private void styleActionButton(TextView button, String label) {
+        button.setText(label);
+        button.setTextColor(textColor);
+        button.setTextSize(14);
+        button.setGravity(Gravity.CENTER);
+        button.setTypeface(null, android.graphics.Typeface.BOLD);
+        button.setAllCaps(false);
+        GradientDrawable b = new GradientDrawable();
+        b.setColor(cardColor);
+        b.setCornerRadius(dp(18));
+        b.setStroke(dp(1), withAlpha(textColor, 22));
+        button.setBackground(b);
+        button.setElevation(dp(2));
     }
 
     private void addRecentSection() {
@@ -252,22 +305,22 @@ public class MainActivity extends Activity {
         about.setTextSize(15);
         page.addView(about, new LinearLayout.LayoutParams(-1, dp(150)));
 
-        Button hub = new Button(this);
-        hub.setText("Open Avatar Hub");
-        hub.setOnClickListener(v -> { root.removeView(page); showGallery(); });
+        TextView hub = new TextView(this);
+        styleActionButton(hub, "Open Avatar Hub");
+        hub.setOnClickListener(v -> pressAnimation(hub, v2 -> { root.removeView(page); showGallery(); }));
         page.addView(hub, new LinearLayout.LayoutParams(-1, dp(52)));
 
-        Button clear = new Button(this);
-        clear.setText("Clear WebView cache");
-        clear.setOnClickListener(v -> {
+        TextView clear = new TextView(this);
+        styleActionButton(clear, "Clear WebView cache");
+        clear.setOnClickListener(v -> pressAnimation(clear, v2 -> {
             if (webView != null) webView.clearCache(true);
             Toast.makeText(this, "WebView cache cleared", Toast.LENGTH_SHORT).show();
-        });
+        }));
         page.addView(clear, new LinearLayout.LayoutParams(-1, dp(52)));
 
-        Button back = new Button(this);
-        back.setText("Back to Home");
-        back.setOnClickListener(v -> { root.removeView(page); showLauncher(); });
+        TextView back = new TextView(this);
+        styleActionButton(back, "Back to Home");
+        back.setOnClickListener(v -> pressAnimation(back, v2 -> { root.removeView(page); showLauncher(); }));
         page.addView(back, new LinearLayout.LayoutParams(-1, dp(52)));
 
         root.addView(page, new FrameLayout.LayoutParams(-1, -1));
@@ -556,9 +609,9 @@ public class MainActivity extends Activity {
         filters.addView(fr);
         gallery.addView(filters, new LinearLayout.LayoutParams(-1, dp(54)));
 
-        Button importButton = new Button(this);
-        importButton.setText("＋ Import avatars");
-        importButton.setOnClickListener(v -> importAvatars());
+        TextView importButton = new TextView(this);
+        styleActionButton(importButton, "＋  Import avatars");
+        importButton.setOnClickListener(v -> pressAnimation(importButton, v2 -> importAvatars()));
         gallery.addView(importButton, new LinearLayout.LayoutParams(-1, dp(48)));
 
         File base = getExternalMediaDirs().length > 0 ? getExternalMediaDirs()[0] : getExternalFilesDir(null);
