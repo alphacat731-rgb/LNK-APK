@@ -11,6 +11,11 @@ icon_path = os.getenv("ICON_PATH", "").strip() or "assets/grok_icon.png"
 background = os.getenv("BACKGROUND_COLOR", "#111111").strip()
 card = os.getenv("CARD_COLOR", "#202020").strip()
 text_color = os.getenv("TEXT_COLOR", "#FFFFFF").strip()
+version_name = os.getenv("VERSION_NAME", "1.0").strip() or "1.0"
+version_code = int(os.getenv("VERSION_CODE", "1"))
+
+if version_code < 1:
+    raise SystemExit("VERSION_CODE must be 1 or higher")
 
 if not sites_raw:
     raise SystemExit("SITES must contain at least one editor")
@@ -49,8 +54,8 @@ assets.mkdir(parents=True, exist_ok=True)
 }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 gradle = '''plugins { id("com.android.application") }
-android { namespace="com.websitetodapk.app"; compileSdk=35
-    defaultConfig { applicationId="com.websitetodapk.app"; minSdk=23; targetSdk=35; versionCode=1; versionName="1.0" }
+android { namespace="com.websitetodapk.app"; compileSdk=36
+    defaultConfig { applicationId="com.websitetodapk.app"; minSdk=23; targetSdk=36; versionCode=${version_code}; versionName="${version_name}" }
     buildFeatures { buildConfig=true }
     buildTypes { release { isMinifyEnabled = false } }
 }
