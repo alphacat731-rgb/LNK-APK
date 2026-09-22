@@ -119,137 +119,177 @@ public class MainActivity extends Activity {
             webView.stopLoading();
             webView.setVisibility(View.GONE);
         }
+
         launcher.setVisibility(View.VISIBLE);
         launcher.setBackgroundColor(bgColor);
         launcher.removeAllViews();
-        launcher.setAlpha(0f);
-        launcher.setTranslationY(dp(14));
+        launcher.setOrientation(LinearLayout.VERTICAL);
+        launcher.setPadding(dp(12), dp(12), dp(12), dp(8));
 
         ScrollView scroll = new ScrollView(this);
         scroll.setClipToPadding(false);
         scroll.setOverScrollMode(View.OVER_SCROLL_NEVER);
+
         LinearLayout content = new LinearLayout(this);
         content.setOrientation(LinearLayout.VERTICAL);
-        content.setPadding(dp(20), dp(24), dp(20), dp(18));
-        scroll.addView(content);
+        content.setPadding(dp(12), dp(10), dp(12), dp(18));
 
         // Header
         LinearLayout header = new LinearLayout(this);
         header.setGravity(Gravity.CENTER_VERTICAL);
-        TextView greeting = new TextView(this);
-        greeting.setText("WELCOME BACK");
-        greeting.setTextColor(withAlpha(textColor, 125));
-        greeting.setTextSize(11);
-        greeting.setTypeface(null, android.graphics.Typeface.BOLD);
-        header.addView(greeting, new LinearLayout.LayoutParams(0, dp(30), 1f));
-
+        LinearLayout headerText = new LinearLayout(this);
+        headerText.setOrientation(LinearLayout.VERTICAL);
+        headerText.addView(makeText("GROKBOT AVATAR HUB", 10, withAlpha(textColor, 120), true),
+                new LinearLayout.LayoutParams(-1, dp(20)));
+        headerText.addView(makeText("Your creator space", 25, textColor, true),
+                new LinearLayout.LayoutParams(-1, dp(36)));
+        header.addView(headerText, new LinearLayout.LayoutParams(0, dp(58), 1f));
         TextView settingsIcon = makeIconButton("⚙");
         settingsIcon.setOnClickListener(v -> pressAnimation(settingsIcon, v2 -> showSettings()));
-        header.addView(settingsIcon, new LinearLayout.LayoutParams(dp(44), dp(44)));
+        header.addView(settingsIcon, new LinearLayout.LayoutParams(dp(46), dp(46)));
         content.addView(header);
 
-        TextView title = new TextView(this);
-        title.setText("Your avatar\nworkspace");
-        title.setTextColor(textColor);
-        title.setTextSize(31);
-        title.setTypeface(null, android.graphics.Typeface.BOLD);
-        title.setLineSpacing(0f, 0.94f);
-        content.addView(title, new LinearLayout.LayoutParams(-1, dp(78)));
+        TextView sub = makeText("Create, remix, download and keep your favorites.", 12, withAlpha(textColor, 145), false);
+        content.addView(sub, new LinearLayout.LayoutParams(-1, dp(28)));
 
-        TextView subtitle = new TextView(this);
-        subtitle.setText("Create, remix and organize everything in one place.");
-        subtitle.setTextColor(withAlpha(textColor, 155));
-        subtitle.setTextSize(14);
-        content.addView(subtitle, new LinearLayout.LayoutParams(-1, dp(38)));
+        // Hero CTA
+        LinearLayout hero = roundedPanel(dp(26), Color.rgb(58, 44, 104));
+        hero.setOrientation(LinearLayout.VERTICAL);
+        hero.setPadding(dp(18), dp(15), dp(18), dp(15));
+        TextView heroEyebrow = makeText("READY TO CREATE?", 9, Color.rgb(205, 198, 240), true);
+        hero.addView(heroEyebrow, new LinearLayout.LayoutParams(-1, dp(18)));
+        TextView heroTitle = makeText("Make your next avatar ✦", 21, Color.WHITE, true);
+        hero.addView(heroTitle, new LinearLayout.LayoutParams(-1, dp(31)));
+        TextView heroSub = makeText("Start with an editor or jump into your collection.", 11, Color.rgb(214, 208, 235), false);
+        hero.addView(heroSub, new LinearLayout.LayoutParams(-1, dp(25)));
 
-        // Hero / status card
-        LinearLayout hero = roundedPanel(dp(18), cardColor);
-        hero.setPadding(dp(18), dp(16), dp(16), dp(16));
-        TextView heroIcon = makeIconBadge("✦", 48, accentColor());
-        hero.addView(heroIcon, new LinearLayout.LayoutParams(dp(48), dp(48)));
+        LinearLayout heroActions = new LinearLayout(this);
+        heroActions.setGravity(Gravity.CENTER_VERTICAL);
+        TextView create = makeActionPill("＋  Create avatar", Color.rgb(112, 92, 255), Color.WHITE);
+        create.setOnClickListener(v -> pressAnimation(create, v2 -> {
+            if (!editors.isEmpty()) openEditor(0);
+        }));
+        TextView library = makeActionPill("Open library", Color.rgb(48, 49, 66), Color.WHITE);
+        library.setOnClickListener(v -> pressAnimation(library, v2 -> showGallery()));
+        heroActions.addView(create, new LinearLayout.LayoutParams(dp(138), dp(36)));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(120), dp(36));
+        lp.leftMargin = dp(8);
+        heroActions.addView(library, lp);
+        hero.addView(heroActions, new LinearLayout.LayoutParams(-1, dp(38)));
+        LinearLayout.LayoutParams heroP = new LinearLayout.LayoutParams(-1, dp(128));
+        heroP.topMargin = dp(8);
+        content.addView(hero, heroP);
 
-        LinearLayout heroText = new LinearLayout(this);
-        heroText.setOrientation(LinearLayout.VERTICAL);
-        heroText.setPadding(dp(14), 0, 0, 0);
-        TextView h1 = makeText("Avatar workspace", 16, textColor, true);
-        TextView h2 = makeText(editors.size() + " editors ready • Avatar Hub available", 12, withAlpha(textColor, 145), false);
-        heroText.addView(h1, new LinearLayout.LayoutParams(-1, dp(25)));
-        heroText.addView(h2, new LinearLayout.LayoutParams(-1, dp(24)));
-        hero.addView(heroText, new LinearLayout.LayoutParams(0, dp(54), 1f));
-        TextView arrow = makeText("→", 23, textColor, true);
-        arrow.setGravity(Gravity.CENTER);
-        hero.addView(arrow, new LinearLayout.LayoutParams(dp(32), dp(54)));
-        hero.setOnClickListener(v -> pressAnimation(hero, v2 -> showGallery()));
-        content.addView(hero, new LinearLayout.LayoutParams(-1, dp(82)));
+        // Compact stats
+        File base = getExternalMediaDirs().length > 0 ? getExternalMediaDirs()[0] : getExternalFilesDir(null);
+        ArrayList<File> dashboardFiles = new ArrayList<>();
+        if (base != null) collectMedia(new File(base, "GrokBot Avatars"), dashboardFiles);
+        int favorites = 0;
+        for (File f : dashboardFiles) if (isFavorite(f)) favorites++;
 
-        addSectionTitle(content, "Quick launch", "Jump straight into your tools");
+        LinearLayout stats = new LinearLayout(this);
+        stats.setGravity(Gravity.CENTER);
+        stats.setPadding(0, dp(7), 0, dp(4));
+        stats.addView(dashboardStat(String.valueOf(dashboardFiles.size()), "AVATARS"), new LinearLayout.LayoutParams(0, dp(58), 1f));
+        stats.addView(dashboardStat(String.valueOf(editors.size()), "EDITORS"), new LinearLayout.LayoutParams(0, dp(58), 1f));
+        stats.addView(dashboardStat(String.valueOf(favorites), "FAVORITES"), new LinearLayout.LayoutParams(0, dp(58), 1f));
+        content.addView(stats);
+
+        // Editors
+        addSectionTitle(content, "Quick launch", "Your creative tools");
         HorizontalScrollView editorScroll = new HorizontalScrollView(this);
         editorScroll.setHorizontalScrollBarEnabled(false);
         editorScroll.setOverScrollMode(View.OVER_SCROLL_NEVER);
         LinearLayout editorRow = new LinearLayout(this);
         editorRow.setOrientation(LinearLayout.HORIZONTAL);
+
+        int[] accents = {accentColor(), cyanColor(), pinkColor()};
         for (int i = 0; i < editors.size(); i++) {
             final int index = i;
             LinearLayout card = makeEditorCard(editors.get(i).name, i);
+            card.setPadding(dp(12), dp(12), dp(12), dp(10));
             card.setOnClickListener(v -> pressAnimation(card, v2 -> openEditor(index)));
-            LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(dp(154), dp(132));
-            p.setMargins(0, 0, dp(10), 0);
-            editorRow.addView(card, p);
-            animateCard(card, i * 70L);
+            LinearLayout.LayoutParams cp = new LinearLayout.LayoutParams(dp(148), dp(126));
+            cp.rightMargin = dp(9);
+            editorRow.addView(card, cp);
+            animateCard(card, i * 65L);
         }
         editorScroll.addView(editorRow);
-        content.addView(editorScroll, new LinearLayout.LayoutParams(-1, dp(142)));
+        content.addView(editorScroll, new LinearLayout.LayoutParams(-1, dp(136)));
 
-        addSectionTitle(content, "Your collection", "Everything you download lives here");
-        LinearLayout hubRow = new LinearLayout(this);
-        hubRow.setGravity(Gravity.CENTER_VERTICAL);
+        // Collection feature
+        addSectionTitle(content, "Your collection", "Everything you download, in one place");
+        LinearLayout collection = roundedPanel(dp(22), cardColor);
+        collection.setOrientation(LinearLayout.HORIZONTAL);
+        collection.setGravity(Gravity.CENTER_VERTICAL);
+        collection.setPadding(dp(14), dp(12), dp(14), dp(12));
 
-        LinearLayout hubCard = roundedPanel(dp(20), cardColor);
-        hubCard.setPadding(dp(16), dp(14), dp(16), dp(14));
-        TextView hubIcon = makeIconBadge("★", 44, cyanColor());
-        hubCard.addView(hubIcon, new LinearLayout.LayoutParams(dp(44), dp(44)));
+        TextView hubIcon = makeIconBadge("★", 50, cyanColor());
+        collection.addView(hubIcon, new LinearLayout.LayoutParams(dp(50), dp(50)));
 
-        LinearLayout hubText = new LinearLayout(this);
-        hubText.setOrientation(LinearLayout.VERTICAL);
-        hubText.setPadding(dp(12), 0, 0, 0);
-        hubText.addView(makeText("Avatar Hub", 16, textColor, true), new LinearLayout.LayoutParams(-1, dp(25)));
-        hubText.addView(makeText("Images • GIFs • Videos", 12, withAlpha(textColor, 140), false), new LinearLayout.LayoutParams(-1, dp(22)));
-        hubCard.addView(hubText, new LinearLayout.LayoutParams(0, dp(52), 1f));
-        TextView hubArrow = makeText("›", 28, textColor, false);
-        hubArrow.setGravity(Gravity.CENTER);
-        hubCard.addView(hubArrow, new LinearLayout.LayoutParams(dp(28), dp(52)));
-        hubCard.setOnClickListener(v -> pressAnimation(hubCard, v2 -> showGallery()));
-        hubRow.addView(hubCard, new LinearLayout.LayoutParams(0, dp(78), 1f));
-        content.addView(hubRow);
+        LinearLayout collectionText = new LinearLayout(this);
+        collectionText.setOrientation(LinearLayout.VERTICAL);
+        collectionText.setPadding(dp(12), 0, dp(6), 0);
+        collectionText.addView(makeText("Avatar Hub", 17, textColor, true), new LinearLayout.LayoutParams(-1, dp(26)));
+        collectionText.addView(makeText(dashboardFiles.size() + " saved • Images • GIFs • Videos", 11, withAlpha(textColor, 130), false), new LinearLayout.LayoutParams(-1, dp(24)));
+        collection.addView(collectionText, new LinearLayout.LayoutParams(0, dp(54), 1f));
 
+        TextView open = makeText("›", 29, textColor, false);
+        open.setGravity(Gravity.CENTER);
+        collection.addView(open, new LinearLayout.LayoutParams(dp(28), dp(54)));
+        collection.setOnClickListener(v -> pressAnimation(collection, v2 -> showGallery()));
+        content.addView(collection, new LinearLayout.LayoutParams(-1, dp(78)));
+
+        // Recent creations
         addRecentSection(content);
 
-        // Small utility tiles
-        addSectionTitle(content, "Workspace", "A few useful shortcuts");
-        LinearLayout utilityRow = new LinearLayout(this);
-        utilityRow.setGravity(Gravity.CENTER);
+        // Tools row
+        addSectionTitle(content, "Tools", "Shortcuts for your workspace");
+        LinearLayout toolsRow = new LinearLayout(this);
+        toolsRow.setGravity(Gravity.CENTER);
         TextView importTile = makeUtilityTile("＋", "Import", "Add avatars");
         importTile.setOnClickListener(v -> pressAnimation(importTile, v2 -> importAvatars()));
+        TextView favoritesTile = makeUtilityTile("★", "Favorites", favorites + " saved");
+        favoritesTile.setOnClickListener(v -> {
+            galleryFilter = "favorite";
+            pressAnimation(favoritesTile, v2 -> showGallery());
+        });
         TextView settingsTile = makeUtilityTile("⚙", "Settings", "App controls");
         settingsTile.setOnClickListener(v -> pressAnimation(settingsTile, v2 -> showSettings()));
-        utilityRow.addView(importTile, new LinearLayout.LayoutParams(0, dp(76), 1f));
-        utilityRow.addView(spacer(dp(8), dp(1)));
-        utilityRow.addView(settingsTile, new LinearLayout.LayoutParams(0, dp(76), 1f));
-        content.addView(utilityRow);
+        toolsRow.addView(importTile, new LinearLayout.LayoutParams(0, dp(72), 1f));
+        toolsRow.addView(spacer(dp(7), dp(1)), new LinearLayout.LayoutParams(dp(7), dp(1)));
+        toolsRow.addView(favoritesTile, new LinearLayout.LayoutParams(0, dp(72), 1f));
+        toolsRow.addView(spacer(dp(7), dp(1)), new LinearLayout.LayoutParams(dp(7), dp(1)));
+        toolsRow.addView(settingsTile, new LinearLayout.LayoutParams(0, dp(72), 1f));
+        content.addView(toolsRow);
 
-        TextView footer = makeText("GrokBot Avatar Hub  •  Your creations, your space.", 11, withAlpha(textColor, 95), false);
-        footer.setGravity(Gravity.CENTER);
-        LinearLayout.LayoutParams fp = new LinearLayout.LayoutParams(-1, dp(52));
-        fp.topMargin = dp(8);
-        content.addView(footer, fp);
+        // Creator tip
+        LinearLayout tip = roundedPanel(dp(20), withAlpha(cardColor, 230));
+        tip.setGravity(Gravity.CENTER_VERTICAL);
+        tip.setPadding(dp(12), dp(8), dp(12), dp(8));
+        TextView tipIcon = makeIconBadge("✦", 40, accentColor());
+        tip.addView(tipIcon, new LinearLayout.LayoutParams(dp(40), dp(40)));
+        LinearLayout tipText = new LinearLayout(this);
+        tipText.setOrientation(LinearLayout.VERTICAL);
+        tipText.setPadding(dp(10), 0, 0, 0);
+        tipText.addView(makeText("Creator tip", 12, textColor, true), new LinearLayout.LayoutParams(-1, dp(19)));
+        tipText.addView(makeText("Keep a few favorites ready for quick remixing.", 10, withAlpha(textColor, 120), false), new LinearLayout.LayoutParams(-1, dp(22)));
+        tip.addView(tipText, new LinearLayout.LayoutParams(0, dp(43), 1f));
+        LinearLayout.LayoutParams tipP = new LinearLayout.LayoutParams(-1, dp(62));
+        tipP.topMargin = dp(10);
+        content.addView(tip, tipP);
 
+        content.addView(makeText("GrokBot Avatar Hub  •  Your creations, your space.", 10, withAlpha(textColor, 80), false),
+                new LinearLayout.LayoutParams(-1, dp(42)));
+
+        scroll.addView(content, new ScrollView.LayoutParams(-1, -2));
         launcher.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1f));
 
-        // Floating-style bottom navigation
-        LinearLayout nav = roundedPanel(dp(22), withAlpha(cardColor, 245));
-        nav.setPadding(dp(8), dp(7), dp(8), dp(7));
+        // Persistent bottom navigation
+        LinearLayout nav = roundedPanel(dp(24), withAlpha(cardColor, 245));
+        nav.setPadding(dp(7), dp(6), dp(7), dp(6));
         TextView home = makeNavItem("⌂", "Home", true);
-        TextView hub = makeNavItem("★", "Hub", false);
+        TextView hub = makeNavItem("★", "Library", false);
         TextView settings = makeNavItem("⚙", "Settings", false);
         home.setOnClickListener(v -> scroll.smoothScrollTo(0, 0));
         hub.setOnClickListener(v -> pressAnimation(hub, v2 -> showGallery()));
@@ -257,11 +297,33 @@ public class MainActivity extends Activity {
         nav.addView(home, new LinearLayout.LayoutParams(0, dp(58), 1f));
         nav.addView(hub, new LinearLayout.LayoutParams(0, dp(58), 1f));
         nav.addView(settings, new LinearLayout.LayoutParams(0, dp(58), 1f));
-        LinearLayout.LayoutParams np = new LinearLayout.LayoutParams(-1, dp(72));
-        np.setMargins(dp(14), 0, dp(14), dp(12));
-        launcher.addView(nav, np);
+        LinearLayout.LayoutParams navP = new LinearLayout.LayoutParams(-1, dp(70));
+        navP.setMargins(dp(10), dp(7), dp(10), dp(8));
+        launcher.addView(nav, navP);
 
         animateLauncherEntrance();
+    }
+
+    private TextView makeActionPill(String label, int background, int foreground) {
+        TextView t = makeText(label, 11, foreground, true);
+        t.setGravity(Gravity.CENTER);
+        GradientDrawable g = new GradientDrawable();
+        g.setColor(background);
+        g.setCornerRadius(dp(18));
+        g.setStroke(dp(1), withAlpha(Color.WHITE, 18));
+        t.setBackground(g);
+        return t;
+    }
+
+    private LinearLayout dashboardStat(String value, String label) {
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setGravity(Gravity.CENTER);
+        box.addView(makeText(value, 20, textColor, true), new LinearLayout.LayoutParams(-1, dp(27)));
+        TextView l = makeText(label, 8, withAlpha(textColor, 110), true);
+        l.setGravity(Gravity.CENTER);
+        box.addView(l, new LinearLayout.LayoutParams(-1, dp(20)));
+        return box;
     }
 
     private LinearLayout roundedPanel(int radius, int color) {
