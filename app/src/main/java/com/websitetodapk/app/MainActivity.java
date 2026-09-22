@@ -360,6 +360,20 @@ public class MainActivity extends Activity {
                 .start();
     }
 
+    private void styleActionButton(TextView t, String label) {
+        t.setText(label);
+        t.setTextColor(textColor);
+        t.setTextSize(12);
+        t.setGravity(Gravity.CENTER);
+        t.setTypeface(null, android.graphics.Typeface.BOLD);
+        GradientDrawable g = new GradientDrawable();
+        g.setColor(cardColor);
+        g.setCornerRadius(dp(16));
+        g.setStroke(dp(1), withAlpha(textColor, 22));
+        t.setBackground(g);
+        t.setElevation(dp(1));
+    }
+
     private LinearLayout roundedPanel(int radius, int color) {
         LinearLayout panel = new LinearLayout(this);
         GradientDrawable g = new GradientDrawable();
