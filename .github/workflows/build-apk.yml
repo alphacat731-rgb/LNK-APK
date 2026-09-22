@@ -85,14 +85,14 @@ jobs:
 
       - name: Configure app
         env:
-          APP_NAME: ${ inputs.app_name }}
-          SITES: ${ inputs.sites }}
-          ICON_PATH: ${ inputs.icon_path }}
-          BACKGROUND_COLOR: ${ inputs.background_color }}
-          CARD_COLOR: ${ inputs.card_color }}
-          TEXT_COLOR: ${ inputs.text_color }}
-          VERSION_NAME: ${ inputs.version_name }}
-          VERSION_CODE: ${ inputs.version_code }}
+          APP_NAME: ${{ inputs.app_name }}
+          SITES: ${{ inputs.sites }}
+          ICON_PATH: ${{ inputs.icon_path }}
+          BACKGROUND_COLOR: ${{ inputs.background_color }}
+          CARD_COLOR: ${{ inputs.card_color }}
+          TEXT_COLOR: ${{ inputs.text_color }}
+          VERSION_NAME: ${{ inputs.version_name }}
+          VERSION_CODE: ${{ inputs.version_code }}
         run: python3 scripts/configure.py
 
       - name: Verify generated launcher data
@@ -105,10 +105,10 @@ jobs:
 
       - name: Sign release APK/AAB
         env:
-          RELEASE_KEYSTORE_BASE64: ${ secrets.RELEASE_KEYSTORE_BASE64 }}
-          RELEASE_KEYSTORE_PASSWORD: ${ secrets.RELEASE_KEYSTORE_PASSWORD }}
-          RELEASE_KEY_ALIAS: ${ secrets.RELEASE_KEY_ALIAS }}
-          RELEASE_KEY_PASSWORD: ${ secrets.RELEASE_KEY_PASSWORD }}
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
         run: |
           if [ -z "$RELEASE_KEYSTORE_BASE64" ]; then
             echo "Release keystore secrets are not configured; creating a temporary key for testing only."
@@ -124,7 +124,7 @@ jobs:
       - name: Upload release files
         uses: actions/upload-artifact@v4
         with:
-          name: LNK-APK-${ inputs.version_name }}
+          name: LNK-APK-${{ inputs.version_name }}
           path: |
             app-release.apk
             app/build/outputs/bundle/release/app-release.aab
