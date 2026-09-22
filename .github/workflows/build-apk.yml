@@ -20,7 +20,7 @@ on:
         description: "Optional repo path to PNG/JPG/WebP icon"
         required: false
         type: string
-        default: "assets/grok_icon.jpg"
+        default: "assets/grok_icon.png"
       background_color:
         description: "Launcher background hex color"
         required: true
