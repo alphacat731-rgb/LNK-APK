@@ -25,12 +25,12 @@ on:
         description: "Launcher background hex color"
         required: true
         type: string
-        default: "#111111"
+        default: "#0B0B0B"
       card_color:
         description: "Launcher card hex color"
         required: true
         type: string
-        default: "#202020"
+        default: "#171717"
       version_name:
         description: "Release version name"
         required: true
