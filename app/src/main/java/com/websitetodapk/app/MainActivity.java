@@ -24,6 +24,9 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.HorizontalScrollView;
+import android.widget.ScrollView;
 import android.widget.FrameLayout;
 import android.widget.GridLayout;
 import android.widget.ImageView;
@@ -44,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Locale;
+import java.util.List;
 
 public class MainActivity extends Activity {
     private static final int FILE_CHOOSER_REQUEST = 1001;
@@ -56,6 +60,10 @@ public class MainActivity extends Activity {
     private int bgColor = Color.rgb(17,17,17);
     private int cardColor = Color.rgb(32,32,32);
     private int textColor = Color.WHITE;
+    private final android.content.SharedPreferences prefs = null;
+    private File galleryBase;
+    private ArrayList<File> allGalleryFiles = new ArrayList<>();
+    private String galleryFilter = "all";
 
     private static class Editor {
         String name;
@@ -139,6 +147,13 @@ public class MainActivity extends Activity {
         }
         addCard(grid, "Avatar Hub", editors.size(), v -> showGallery());
 
+        addRecentSection();
+
+        Button settings = new Button(this);
+        settings.setText("⚙ Settings & About");
+        settings.setOnClickListener(v -> showSettings());
+        launcher.addView(settings, new LinearLayout.LayoutParams(-1, dp(48)));
+
         TextView hint = new TextView(this);
         hint.setText("Your downloaded avatars appear in Avatar Hub automatically.");
         hint.setTextColor(withAlpha(textColor, 130));
@@ -181,6 +196,83 @@ public class MainActivity extends Activity {
         cp.rowSpec = GridLayout.spec(index / 2);
         cp.setMargins(dp(7), dp(7), dp(7), dp(7));
         grid.addView(card, cp);
+    }
+
+    private void addRecentSection() {
+        File base = getExternalMediaDirs().length > 0 ? getExternalMediaDirs()[0] : getExternalFilesDir(null);
+        ArrayList<File> recent = new ArrayList<>();
+        if (base != null) collectMedia(new File(base, "GrokBot Avatars"), recent);
+        Collections.sort(recent, (a,b) -> Long.compare(b.lastModified(), a.lastModified()));
+        if (recent.isEmpty()) return;
+
+        TextView heading = new TextView(this);
+        heading.setText("Recent creations");
+        heading.setTextColor(textColor);
+        heading.setTextSize(18);
+        heading.setTypeface(null, android.graphics.Typeface.BOLD);
+        launcher.addView(heading, new LinearLayout.LayoutParams(-1, dp(38)));
+
+        HorizontalScrollView hs = new HorizontalScrollView(this);
+        LinearLayout row = new LinearLayout(this);
+        row.setPadding(0, dp(4), 0, dp(8));
+        for (int i = 0; i < Math.min(5, recent.size()); i++) {
+            final File file = recent.get(i);
+            ImageView p = new ImageView(this);
+            p.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            String n = file.getName().toLowerCase(Locale.US);
+            if (n.endsWith(".mp4") || n.endsWith(".webm")) p.setImageResource(android.R.drawable.ic_media_play);
+            else p.setImageDrawable(android.graphics.drawable.Drawable.createFromPath(file.getAbsolutePath()));
+            p.setBackgroundColor(cardColor);
+            p.setOnClickListener(v -> openMedia(file));
+            LinearLayout.LayoutParams pp = new LinearLayout.LayoutParams(dp(86), dp(86));
+            pp.setMargins(0, 0, dp(8), 0);
+            row.addView(p, pp);
+        }
+        hs.addView(row);
+        launcher.addView(hs, new LinearLayout.LayoutParams(-1, dp(100)));
+    }
+
+    private void showSettings() {
+        launcher.setVisibility(View.GONE);
+        LinearLayout page = new LinearLayout(this);
+        page.setOrientation(LinearLayout.VERTICAL);
+        page.setPadding(dp(20), dp(24), dp(20), dp(20));
+        page.setBackgroundColor(bgColor);
+
+        TextView title = new TextView(this);
+        title.setText("Settings");
+        title.setTextColor(textColor);
+        title.setTextSize(28);
+        title.setTypeface(null, android.graphics.Typeface.BOLD);
+        page.addView(title, new LinearLayout.LayoutParams(-1, dp(60)));
+
+        TextView about = new TextView(this);
+        about.setText("GrokBot Avatar Hub\n\nCreate, download and organize your avatars from multiple editors in one place.\n\nVersion " + getString(com.websitetodapk.app.R.string.app_name));
+        about.setTextColor(withAlpha(textColor, 210));
+        about.setTextSize(15);
+        page.addView(about, new LinearLayout.LayoutParams(-1, dp(150)));
+
+        Button hub = new Button(this);
+        hub.setText("Open Avatar Hub");
+        hub.setOnClickListener(v -> { root.removeView(page); showGallery(); });
+        page.addView(hub, new LinearLayout.LayoutParams(-1, dp(52)));
+
+        Button clear = new Button(this);
+        clear.setText("Clear WebView cache");
+        clear.setOnClickListener(v -> {
+            if (webView != null) webView.clearCache(true);
+            Toast.makeText(this, "WebView cache cleared", Toast.LENGTH_SHORT).show();
+        });
+        page.addView(clear, new LinearLayout.LayoutParams(-1, dp(52)));
+
+        Button back = new Button(this);
+        back.setText("Back to Home");
+        back.setOnClickListener(v -> { root.removeView(page); showLauncher(); });
+        page.addView(back, new LinearLayout.LayoutParams(-1, dp(52)));
+
+        root.addView(page, new FrameLayout.LayoutParams(-1, -1));
+        root.setTag(page);
+        hideSystemBars();
     }
 
     private void openEditor(int index) {
@@ -423,47 +515,100 @@ public class MainActivity extends Activity {
         LinearLayout gallery = new LinearLayout(this);
         gallery.setOrientation(LinearLayout.VERTICAL);
         gallery.setBackgroundColor(bgColor);
-        gallery.setPadding(dp(16), dp(20), dp(16), dp(16));
+        gallery.setPadding(dp(16), dp(18), dp(16), dp(12));
 
         LinearLayout top = new LinearLayout(this);
         top.setGravity(Gravity.CENTER_VERTICAL);
         TextView title = new TextView(this);
         title.setText("Avatar Hub");
         title.setTextColor(textColor);
-        title.setTextSize(24);
+        title.setTextSize(25);
         title.setTypeface(null, android.graphics.Typeface.BOLD);
-        top.addView(title, new LinearLayout.LayoutParams(0, dp(56), 1f));
-
+        top.addView(title, new LinearLayout.LayoutParams(0, dp(52), 1f));
         Button back = new Button(this);
         back.setText("Back");
-        back.setOnClickListener(v -> showLauncher());
-        top.addView(back, new LinearLayout.LayoutParams(dp(90), dp(50)));
+        back.setOnClickListener(v -> { root.removeView(gallery); root.setTag(null); showLauncher(); });
+        top.addView(back, new LinearLayout.LayoutParams(dp(88), dp(48)));
         gallery.addView(top);
 
-        File base = getExternalMediaDirs().length > 0 ? getExternalMediaDirs()[0] : getExternalFilesDir(null);
-        ArrayList<File> files = new ArrayList<>();
-        if (base != null) collectMedia(new File(base, "GrokBot Avatars"), files);
-        Collections.sort(files, (a,b) -> Long.compare(b.lastModified(), a.lastModified()));
+        EditText search = new EditText(this);
+        search.setHint("Search avatars…");
+        search.setSingleLine(true);
+        search.setTextColor(textColor);
+        search.setHintTextColor(withAlpha(textColor, 130));
+        gallery.addView(search, new LinearLayout.LayoutParams(-1, dp(52)));
 
-        if (files.isEmpty()) {
-            TextView empty = new TextView(this);
-            empty.setText("No avatars yet. Download one from an editor and it will appear here.");
-            empty.setTextColor(withAlpha(textColor, 190));
-            empty.setTextSize(16);
-            empty.setGravity(Gravity.CENTER);
-            gallery.addView(empty, new LinearLayout.LayoutParams(-1, 0, 1f));
-        } else {
-            GridLayout grid = new GridLayout(this);
-            grid.setColumnCount(2);
-            for (File f : files) addMediaCard(grid, f);
-            android.widget.ScrollView scroll = new android.widget.ScrollView(this);
-            scroll.addView(grid);
-            gallery.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1f));
+        HorizontalScrollView filters = new HorizontalScrollView(this);
+        LinearLayout fr = new LinearLayout(this);
+        String[] labels = {"All", "Images", "GIFs", "Videos", "★ Favorites"};
+        String[] keys = {"all", "image", "gif", "video", "favorite"};
+        for (int i=0;i<labels.length;i++) {
+            Button b = new Button(this);
+            final String key=keys[i];
+            b.setText(labels[i]);
+            b.setOnClickListener(v -> { galleryFilter=key; refreshGalleryGrid(gridRef, search.getText().toString()); });
+            fr.addView(b, new LinearLayout.LayoutParams(-2, dp(48)));
         }
+        filters.addView(fr);
+        gallery.addView(filters, new LinearLayout.LayoutParams(-1, dp(54)));
 
+        Button importButton = new Button(this);
+        importButton.setText("＋ Import avatars");
+        importButton.setOnClickListener(v -> importAvatars());
+        gallery.addView(importButton, new LinearLayout.LayoutParams(-1, dp(48)));
+
+        GridLayout grid = new GridLayout(this);
+        grid.setColumnCount(2);
+        final GridLayout gridRef = grid;
+        File base = getExternalMediaDirs().length > 0 ? getExternalMediaDirs()[0] : getExternalFilesDir(null);
+        galleryBase = base == null ? null : new File(base, "GrokBot Avatars");
+        allGalleryFiles.clear();
+        if (galleryBase != null) collectMedia(galleryBase, allGalleryFiles);
+        Collections.sort(allGalleryFiles, (a,b) -> Long.compare(b.lastModified(), a.lastModified()));
+        ScrollView scroll = new ScrollView(this);
+        scroll.addView(grid);
+        gallery.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1f));
+        search.addTextChangedListener(new android.text.TextWatcher() {
+            public void beforeTextChanged(CharSequence s,int st,int c,int a) {}
+            public void onTextChanged(CharSequence s,int st,int before,int count) { refreshGalleryGrid(gridRef, s.toString()); }
+            public void afterTextChanged(android.text.Editable e) {}
+        });
         root.addView(gallery, new FrameLayout.LayoutParams(-1, -1));
         root.setTag(gallery);
+        refreshGalleryGrid(grid, "");
         hideSystemBars();
+    }
+
+    private void refreshGalleryGrid(GridLayout grid, String query) {
+        grid.removeAllViews();
+        String q = query == null ? "" : query.toLowerCase(Locale.US).trim();
+        for (File f : allGalleryFiles) {
+            String n=f.getName().toLowerCase(Locale.US);
+            boolean type = galleryFilter.equals("all") ||
+                    (galleryFilter.equals("gif") && n.endsWith(".gif")) ||
+                    (galleryFilter.equals("video") && (n.endsWith(".mp4") || n.endsWith(".webm"))) ||
+                    (galleryFilter.equals("image") && (n.endsWith(".png") || n.endsWith(".jpg") || n.endsWith(".jpeg"))) ||
+                    (galleryFilter.equals("favorite") && isFavorite(f));
+            if (type && (q.isEmpty() || n.contains(q))) addMediaCard(grid,f);
+        }
+    }
+
+    private boolean isFavorite(File f) {
+        return getPreferences(MODE_PRIVATE).getBoolean("fav:" + f.getAbsolutePath(), false);
+    }
+
+    private void toggleFavorite(File f) {
+        boolean now=!isFavorite(f);
+        getPreferences(MODE_PRIVATE).edit().putBoolean("fav:" + f.getAbsolutePath(), now).apply();
+        Toast.makeText(this, now ? "Added to favorites" : "Removed from favorites", Toast.LENGTH_SHORT).show();
+    }
+
+    private void importAvatars() {
+        Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        i.addCategory(Intent.CATEGORY_OPENABLE);
+        i.setType("*/*");
+        i.putExtra(Intent.EXTRA_ALLOW_MULTIPLE,true);
+        startActivityForResult(i, 2002);
     }
 
     private void collectMedia(File dir, ArrayList<File> out) {
@@ -511,6 +656,7 @@ public class MainActivity extends Activity {
         card.addView(name, new LinearLayout.LayoutParams(-1, dp(44)));
 
         card.setOnClickListener(v -> openMedia(file));
+        card.setOnLongClickListener(v -> { toggleFavorite(file); return true; });
         GridLayout.LayoutParams p = new GridLayout.LayoutParams();
         p.width = 0; p.height = dp(185);
         p.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
@@ -524,6 +670,7 @@ public class MainActivity extends Activity {
 
         Button close = new Button(this);
         close.setText("Back");
+        close.setOnLongClickListener(v -> { toggleFavorite(file); return true; });
         close.setOnClickListener(v -> {
             root.removeView(viewer);
             hideSystemBars();
@@ -594,6 +741,31 @@ public class MainActivity extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 2002 && resultCode == RESULT_OK && data != null) {
+            try {
+                File base = getExternalMediaDirs().length > 0 ? getExternalMediaDirs()[0] : getExternalFilesDir(null);
+                if (base != null) {
+                    Uri[] uris;
+                    if (data.getClipData()!=null) {
+                        int count=data.getClipData().getItemCount(); uris=new Uri[count];
+                        for(int i=0;i<count;i++) uris[i]=data.getClipData().getItemAt(i).getUri();
+                    } else if(data.getData()!=null) uris=new Uri[]{data.getData()}; else uris=new Uri[0];
+                    for(Uri u:uris) {
+                        String name="imported-avatar-"+System.currentTimeMillis();
+                        String mime=getContentResolver().getType(u);
+                        if(mime==null) mime="image/png";
+                        if(mime.contains("gif")) name+=".gif"; else if(mime.contains("video")) name+=mime.contains("webm")?".webm":".mp4"; else name+=".png";
+                        File dir=new File(base,"GrokBot Avatars/"+(mime.contains("video")?"Videos":(mime.contains("gif")?"GIFs":"Images")));
+                        if(!dir.exists())dir.mkdirs();
+                        try(InputStream in=getContentResolver().openInputStream(u); FileOutputStream out=new FileOutputStream(uniqueFile(new File(dir,name)))) {
+                            byte[] buf=new byte[8192]; int n; while((n=in.read(buf))!=-1)out.write(buf,0,n);
+                        }
+                    }
+                    Toast.makeText(this,"Imported avatars",Toast.LENGTH_SHORT).show();
+                }
+            } catch(Exception e) { Toast.makeText(this,"Import failed",Toast.LENGTH_SHORT).show(); }
+            return;
+        }
         if (requestCode != FILE_CHOOSER_REQUEST || filePathCallback == null) return;
         Uri[] results = null;
         if (resultCode == RESULT_OK && data != null) {
