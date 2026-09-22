@@ -373,7 +373,7 @@ public class MainActivity extends Activity {
     private String filenameFrom(String disposition) {
         if (disposition == null) return null;
         try {
-            java.util.regex.Matcher m = java.util.regex.Pattern.compile("filename\*?=(?:UTF-8''|\\\")?([^;\\\"]+)", java.util.regex.Pattern.CASE_INSENSITIVE).matcher(disposition);
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile("filename=?([^;]+)", java.util.regex.Pattern.CASE_INSENSITIVE).matcher(disposition);
             if (m.find()) return URLDecoder.decode(m.group(1).trim(), "UTF-8");
         } catch (Exception ignored) {}
         return null;
