@@ -1144,3 +1144,4 @@ public class MainActivity extends Activity {
         }
         showLauncher();
     }
+}
