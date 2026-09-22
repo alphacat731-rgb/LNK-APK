@@ -329,9 +329,17 @@ public class MainActivity extends Activity {
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
         box.setGravity(Gravity.CENTER);
-        box.addView(makeText(value, 20, textColor, true), new LinearLayout.LayoutParams(-1, dp(24)));
+
+        // Keep the metric value centered inside its full-width slot.
+        // Without this, the TextView itself was centered but its text stayed left-aligned.
+        TextView v = makeText(value, 20, textColor, true);
+        v.setGravity(Gravity.CENTER);
+        v.setIncludeFontPadding(false);
+        box.addView(v, new LinearLayout.LayoutParams(-1, dp(24)));
+
         TextView l = makeText(label, 8, withAlpha(textColor, 110), true);
         l.setGravity(Gravity.CENTER);
+        l.setIncludeFontPadding(false);
         box.addView(l, new LinearLayout.LayoutParams(-1, dp(16)));
         return box;
     }
