@@ -53,13 +53,14 @@ assets.mkdir(parents=True, exist_ok=True)
     "apps": apps
 }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
-gradle = """plugins { id("com.android.application") }
-android { namespace="com.websitetodapk.app"; compileSdk=36
-    defaultConfig { applicationId="com.websitetodapk.app"; minSdk=23; targetSdk=36; versionCode=""" + str(version_code) + """; versionName="""" + version_name.replace("\\", "\\\\").replace('"', '\\"') + """" }
-    buildFeatures { buildConfig=true }
-    buildTypes { release { isMinifyEnabled = false } }
-}
-"""
+escaped_version_name = version_name.replace("\\", "\\\\").replace('"', '\\"')
+gradle = f'''plugins {{ id("com.android.application") }}
+android {{ namespace="com.websitetodapk.app"; compileSdk=36
+    defaultConfig {{ applicationId="com.websitetodapk.app"; minSdk=23; targetSdk=36; versionCode={version_code}; versionName="{escaped_version_name}" }}
+    buildFeatures {{ buildConfig=true }}
+    buildTypes {{ release {{ isMinifyEnabled = false }} }}
+}}
+'''
 (R / "app/build.gradle.kts").write_text(gradle, encoding="utf-8")
 (R / "app/src/main/res/values/strings.xml").write_text(
     "<resources><string name=\"app_name\">" + escape(name) + "</string></resources>\n",
