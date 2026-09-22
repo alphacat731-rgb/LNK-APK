@@ -594,6 +594,40 @@ public class MainActivity extends Activity {
         }
     }
 
+    private void showMediaActions(File file) {
+        String favoriteLabel = isFavorite(file) ? "Remove favorite" : "Add to favorites";
+        new android.app.AlertDialog.Builder(this)
+                .setTitle(file.getName())
+                .setItems(new String[]{favoriteLabel, "Delete"}, (d, which) -> {
+                    if (which == 0) {
+                        toggleFavorite(file);
+                    } else {
+                        if (file.delete()) {
+                            allGalleryFiles.remove(file);
+                            Toast.makeText(this, "Deleted", Toast.LENGTH_SHORT).show();
+                            refreshGalleryGrid(findGalleryGrid(), "");
+                        } else {
+                            Toast.makeText(this, "Could not delete file", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                }).show();
+    }
+
+    private GridLayout findGalleryGrid() {
+        View tag = (View) root.getTag();
+        if (tag instanceof LinearLayout) {
+            LinearLayout layout = (LinearLayout) tag;
+            for (int i=0;i<layout.getChildCount();i++) {
+                View child=layout.getChildAt(i);
+                if (child instanceof ScrollView) {
+                    View inner=((ScrollView)child).getChildAt(0);
+                    if (inner instanceof GridLayout) return (GridLayout)inner;
+                }
+            }
+        }
+        return new GridLayout(this);
+    }
+
     private boolean isFavorite(File f) {
         return getPreferences(MODE_PRIVATE).getBoolean("fav:" + f.getAbsolutePath(), false);
     }
@@ -657,7 +691,7 @@ public class MainActivity extends Activity {
         card.addView(name, new LinearLayout.LayoutParams(-1, dp(44)));
 
         card.setOnClickListener(v -> openMedia(file));
-        card.setOnLongClickListener(v -> { toggleFavorite(file); return true; });
+        card.setOnLongClickListener(v -> { showMediaActions(file); return true; });
         GridLayout.LayoutParams p = new GridLayout.LayoutParams();
         p.width = 0; p.height = dp(185);
         p.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
