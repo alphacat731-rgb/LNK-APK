@@ -19,6 +19,25 @@ No Cloudflare Worker, no API token, and no external backend.
 
 GitHub supports manually running workflows that use the `workflow_dispatch` trigger from the Actions tab.
 
+
+## GrokBot Avatar Hub download page
+
+The public download site is:
+
+**https://alphacat731-rgb.github.io/LNK-APK/**
+
+It is a static GitHub Pages site with a direct **Download APK** button. New builds are published to GitHub Releases automatically by the workflow.
+
+### Installing the APK
+
+1. Open the download page.
+2. Tap **Download APK**.
+3. Open the downloaded `.apk` file.
+4. If Android asks, allow your browser/file manager to install apps from that source.
+5. Install **GrokBot Avatar Hub**.
+
+Google Play is not required.
+
 ## App behavior
 
 The generated APK is a native Android WebView:
