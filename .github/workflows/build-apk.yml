@@ -35,12 +35,12 @@ on:
         description: "Release version name"
         required: true
         type: string
-        default: "1.0"
+        default: "1.0.1"
       version_code:
         description: "Release version code"
         required: true
         type: string
-        default: "1"
+        default: "2"
       text_color:
         description: "Launcher text hex color"
         required: true
