@@ -538,6 +538,10 @@ public class MainActivity extends Activity {
         search.setHintTextColor(withAlpha(textColor, 130));
         gallery.addView(search, new LinearLayout.LayoutParams(-1, dp(52)));
 
+        GridLayout grid = new GridLayout(this);
+        grid.setColumnCount(2);
+        final GridLayout gridRef = grid;
+
         HorizontalScrollView filters = new HorizontalScrollView(this);
         LinearLayout fr = new LinearLayout(this);
         String[] labels = {"All", "Images", "GIFs", "Videos", "★ Favorites"};
@@ -557,9 +561,6 @@ public class MainActivity extends Activity {
         importButton.setOnClickListener(v -> importAvatars());
         gallery.addView(importButton, new LinearLayout.LayoutParams(-1, dp(48)));
 
-        GridLayout grid = new GridLayout(this);
-        grid.setColumnCount(2);
-        final GridLayout gridRef = grid;
         File base = getExternalMediaDirs().length > 0 ? getExternalMediaDirs()[0] : getExternalFilesDir(null);
         galleryBase = base == null ? null : new File(base, "GrokBot Avatars");
         allGalleryFiles.clear();
