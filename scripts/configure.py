@@ -55,7 +55,7 @@ assets.mkdir(parents=True, exist_ok=True)
 
 gradle = '''plugins { id("com.android.application") }
 android { namespace="com.websitetodapk.app"; compileSdk=36
-    defaultConfig { applicationId="com.websitetodapk.app"; minSdk=23; targetSdk=36; versionCode=' + str(version_code) + '; versionName="' + version_name + '" }
+    defaultConfig { applicationId="com.websitetodapk.app"; minSdk=23; targetSdk=36; versionCode=${version_code}; versionName="${version_name}" }
     buildFeatures { buildConfig=true }
     buildTypes { release { isMinifyEnabled = false } }
 }
