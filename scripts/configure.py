@@ -11,8 +11,8 @@ icon_path = os.getenv("ICON_PATH", "").strip() or "assets/grok_icon.webp"
 background = os.getenv("BACKGROUND_COLOR", "#111111").strip()
 card = os.getenv("CARD_COLOR", "#202020").strip()
 text_color = os.getenv("TEXT_COLOR", "#FFFFFF").strip()
-version_name = os.getenv("VERSION_NAME", "1.0").strip() or "1.0"
-version_code = int(os.getenv("VERSION_CODE", "1"))
+version_name = os.getenv("VERSION_NAME", "1.0.1").strip() or "1.0.1"
+version_code = int(os.getenv("VERSION_CODE", "2"))
 
 if version_code < 1:
     raise SystemExit("VERSION_CODE must be 1 or higher")
