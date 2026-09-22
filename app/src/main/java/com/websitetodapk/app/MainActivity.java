@@ -512,7 +512,7 @@ public class MainActivity extends Activity {
         String n = file.getName().toLowerCase(Locale.US);
         if (n.endsWith(".mp4") || n.endsWith(".webm")) {
             android.widget.VideoView video = new android.widget.VideoView(this);
-            video.setVideoURI(Uri.fromFile(file));
+            video.setVideoPath(file.getAbsolutePath());
             video.setMediaController(new android.widget.MediaController(this));
             video.setOnPreparedListener(mp -> mp.setLooping(false));
             FrameLayout.LayoutParams vp = new FrameLayout.LayoutParams(-1, -1);
