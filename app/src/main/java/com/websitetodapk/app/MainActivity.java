@@ -64,7 +64,7 @@ public class MainActivity extends Activity {
     private int bgColor = Color.rgb(17,17,17);
     private int cardColor = Color.rgb(32,32,32);
     private int textColor = Color.WHITE;
-    private final android.content.SharedPreferences prefs = null;
+    private android.content.SharedPreferences prefs;\n    private String language = "en";
     private File galleryBase;
     private ArrayList<File> allGalleryFiles = new ArrayList<>();
     private String galleryFilter = "all";
@@ -142,7 +142,7 @@ public class MainActivity extends Activity {
         headerText.setOrientation(LinearLayout.VERTICAL);
         headerText.addView(makeText("GROKBOT AVATAR HUB", 9, withAlpha(textColor, 115), true),
                 new LinearLayout.LayoutParams(-1, dp(18)));
-        headerText.addView(makeText("Your creator space", 25, textColor, true),
+        headerText.addView(makeText(t("creatorSpace"), 25, textColor, true),
                 new LinearLayout.LayoutParams(-1, dp(34)));
         header.addView(headerText, new LinearLayout.LayoutParams(0, dp(52), 1f));
 
@@ -151,7 +151,7 @@ public class MainActivity extends Activity {
         header.addView(settingsIcon, new LinearLayout.LayoutParams(dp(44), dp(44)));
         content.addView(header);
 
-        content.addView(makeText("Create, remix, download and keep your favorites.",
+        content.addView(makeText(t("homeLead"),
                 12, withAlpha(textColor, 145), false),
                 new LinearLayout.LayoutParams(-1, dp(24)));
 
@@ -160,24 +160,24 @@ public class MainActivity extends Activity {
         hero.setOrientation(LinearLayout.VERTICAL);
         hero.setPadding(dp(16), dp(12), dp(16), dp(12));
 
-        hero.addView(makeText("READY TO CREATE?", 8, withAlpha(Color.WHITE, 145), true),
+        hero.addView(makeText(t("ready"), 8, withAlpha(Color.WHITE, 145), true),
                 new LinearLayout.LayoutParams(-1, dp(15)));
-        hero.addView(makeText("Make your next avatar", 20, Color.WHITE, true),
+        hero.addView(makeText(t("makeAvatar"), 20, Color.WHITE, true),
                 new LinearLayout.LayoutParams(-1, dp(28)));
-        hero.addView(makeText("Start with an editor or open your collection.", 10,
+        hero.addView(makeText(t("heroHint"), 10,
                 withAlpha(Color.WHITE, 145), false),
                 new LinearLayout.LayoutParams(-1, dp(21)));
 
         LinearLayout heroActions = new LinearLayout(this);
         heroActions.setGravity(Gravity.CENTER_VERTICAL);
 
-        TextView create = makeActionPill("＋  Create avatar", Color.WHITE, Color.BLACK);
+        TextView create = makeActionPill("＋  " + t("create"), Color.WHITE, Color.BLACK);
         create.setOnClickListener(v -> pressAnimation(create, v2 -> {
             if (!editors.isEmpty()) openEditor(0);
         }));
         heroActions.addView(create, new LinearLayout.LayoutParams(dp(132), dp(34)));
 
-        TextView library = makeActionPill("Open library", Color.rgb(42, 42, 42), Color.WHITE);
+        TextView library = makeActionPill(t("library"), Color.rgb(42, 42, 42), Color.WHITE);
         library.setOnClickListener(v -> pressAnimation(library, v2 -> showGallery()));
         LinearLayout.LayoutParams libraryLp = new LinearLayout.LayoutParams(dp(112), dp(34));
         libraryLp.leftMargin = dp(8);
@@ -188,23 +188,8 @@ public class MainActivity extends Activity {
         heroLp.topMargin = dp(10);
         content.addView(hero, heroLp);
 
-        // Stats: simple numbers, separated by hairlines instead of three cards.
-        File base = getExternalMediaDirs().length > 0 ? getExternalMediaDirs()[0] : getExternalFilesDir(null);
-        ArrayList<File> dashboardFiles = new ArrayList<>();
-        if (base != null) collectMedia(new File(base, "GrokBot Avatars"), dashboardFiles);
-        int favorites = 0;
-        for (File f : dashboardFiles) if (isFavorite(f)) favorites++;
-
-        LinearLayout stats = new LinearLayout(this);
-        stats.setGravity(Gravity.CENTER_VERTICAL);
-        stats.setPadding(0, dp(8), 0, dp(4));
-        addStatWithDivider(stats, String.valueOf(dashboardFiles.size()), "AVATARS", true);
-        addStatWithDivider(stats, String.valueOf(editors.size()), "EDITORS", true);
-        addStatWithDivider(stats, String.valueOf(favorites), "FAVORITES", false);
-        content.addView(stats, new LinearLayout.LayoutParams(-1, dp(58)));
-
         // Quick launch: compact list rows avoid clipped carousel cards.
-        addSectionTitle(content, "Quick launch", "Your creative tools");
+        addSectionTitle(content, t("editors"), "");
         for (int i = 0; i < editors.size(); i++) {
             final int index = i;
             LinearLayout row = makeEditorRow(editors.get(i).name, i);
@@ -215,7 +200,7 @@ public class MainActivity extends Activity {
         }
 
         // Collection: one clean row with a secondary import action.
-        addSectionTitle(content, "Your collection", "Everything you download, in one place");
+        addSectionTitle(content, t("library"), "");
         LinearLayout collection = roundedPanel(dp(12), cardColor);
         collection.setGravity(Gravity.CENTER_VERTICAL);
         collection.setPadding(dp(10), dp(8), dp(10), dp(8));
@@ -226,14 +211,14 @@ public class MainActivity extends Activity {
         LinearLayout collectionText = new LinearLayout(this);
         collectionText.setOrientation(LinearLayout.VERTICAL);
         collectionText.setPadding(dp(10), 0, dp(6), 0);
-        collectionText.addView(makeText("Avatar Hub", 16, textColor, true),
+        collectionText.addView(makeText(t("avatarHub"), 16, textColor, true),
                 new LinearLayout.LayoutParams(-1, dp(23)));
-        collectionText.addView(makeText(dashboardFiles.size() + " saved  •  Images  •  GIFs  •  Videos",
+        collectionText.addView(makeText(dashboardFiles.size() + "  •  " + t("media"),
                 10, withAlpha(textColor, 125), false),
                 new LinearLayout.LayoutParams(-1, dp(19)));
         collection.addView(collectionText, new LinearLayout.LayoutParams(0, dp(42), 1f));
 
-        TextView importText = makeText("Import", 10, textColor, true);
+        TextView importText = makeText(t("import"), 10, textColor, true);
         importText.setGravity(Gravity.CENTER);
         GradientDrawable importBg = new GradientDrawable();
         importBg.setColor(Color.TRANSPARENT);
@@ -251,7 +236,7 @@ public class MainActivity extends Activity {
         content.addView(collection, new LinearLayout.LayoutParams(-1, dp(58)));
 
         // Recent creations: compact and guaranteed not to clip text.
-        addRecentSection(content);
+        // Keep the home screen focused: recent files are available from Avatar Hub.\n
 
         scroll.addView(content, new ScrollView.LayoutParams(-1, -2));
         launcher.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1f));
@@ -266,9 +251,9 @@ public class MainActivity extends Activity {
         nav.setBackground(navBg);
         nav.setElevation(dp(8));
 
-        TextView home = makeNavItem("⌂", "Home", true);
-        TextView hub = makeNavItem("★", "Library", false);
-        TextView settings = makeNavItem("⚙", "Settings", false);
+        TextView home = makeNavItem("⌂", t("home"), true);
+        TextView hub = makeNavItem("★", t("library"), false);
+        TextView settings = makeNavItem("⚙", t("settings"), false);
         home.setOnClickListener(v -> scroll.smoothScrollTo(0, 0));
         hub.setOnClickListener(v -> pressAnimation(hub, v2 -> showGallery()));
         settings.setOnClickListener(v -> pressAnimation(settings, v2 -> showSettings()));
@@ -304,7 +289,7 @@ public class MainActivity extends Activity {
         text.setPadding(dp(10), 0, dp(8), 0);
         text.addView(makeText(label, 14, textColor, true),
                 new LinearLayout.LayoutParams(-1, dp(20)));
-        text.addView(makeText("Open editor", 10, withAlpha(textColor, 110), false),
+        text.addView(makeText(t("openEditor"), 10, withAlpha(textColor, 110), false),
                 new LinearLayout.LayoutParams(-1, dp(16)));
         row.addView(text, new LinearLayout.LayoutParams(0, dp(38), 1f));
 
@@ -549,6 +534,34 @@ public class MainActivity extends Activity {
         hs.addView(row);
         parent.addView(hs, new LinearLayout.LayoutParams(-1, dp(88)));
     }
+    private String t(String key) {
+        if (language.equals("es")) {
+            if (key.equals("creatorSpace")) return "Tu espacio creativo"; if (key.equals("homeLead")) return "Crea, descarga y organiza tus avatares."; if (key.equals("ready")) return "LISTO PARA CREAR"; if (key.equals("makeAvatar")) return "Crea tu próximo avatar"; if (key.equals("heroHint")) return "Elige un editor o abre tu biblioteca."; if (key.equals("create")) return "Crear avatar"; if (key.equals("library")) return "Biblioteca"; if (key.equals("editors")) return "Editores"; if (key.equals("openEditor")) return "Abrir editor"; if (key.equals("avatarHub")) return "Avatar Hub"; if (key.equals("import")) return "Importar"; if (key.equals("media")) return "imágenes · GIFs · vídeos"; if (key.equals("home")) return "Inicio"; if (key.equals("settings")) return "Ajustes"; if (key.equals("language")) return "Idioma"; if (key.equals("openHub")) return "Abrir Avatar Hub"; if (key.equals("clearCache")) return "Borrar caché"; if (key.equals("cacheCleared")) return "Caché borrada"; if (key.equals("backHome")) return "Volver al inicio";
+        }
+        if (language.equals("zh")) {
+            if (key.equals("creatorSpace")) return "你的创作空间"; if (key.equals("homeLead")) return "创建、下载和整理你的头像。"; if (key.equals("ready")) return "准备开始"; if (key.equals("makeAvatar")) return "创建你的下一个头像"; if (key.equals("heroHint")) return "选择编辑器或打开头像库。"; if (key.equals("create")) return "创建头像"; if (key.equals("library")) return "头像库"; if (key.equals("editors")) return "编辑器"; if (key.equals("openEditor")) return "打开编辑器"; if (key.equals("avatarHub")) return "Avatar Hub"; if (key.equals("import")) return "导入"; if (key.equals("media")) return "图片 · GIF · 视频"; if (key.equals("home")) return "主页"; if (key.equals("settings")) return "设置"; if (key.equals("language")) return "语言"; if (key.equals("openHub")) return "打开 Avatar Hub"; if (key.equals("clearCache")) return "清除缓存"; if (key.equals("cacheCleared")) return "缓存已清除"; if (key.equals("backHome")) return "返回主页";
+        }
+        if (language.equals("ja")) {
+            if (key.equals("creatorSpace")) return "クリエイタースペース"; if (key.equals("homeLead")) return "アバターを作成・保存・整理。"; if (key.equals("ready")) return "作成を始めよう"; if (key.equals("makeAvatar")) return "次のアバターを作成"; if (key.equals("heroHint")) return "エディターを選ぶかライブラリを開きます。"; if (key.equals("create")) return "アバターを作成"; if (key.equals("library")) return "ライブラリ"; if (key.equals("editors")) return "エディター"; if (key.equals("openEditor")) return "エディターを開く"; if (key.equals("avatarHub")) return "Avatar Hub"; if (key.equals("import")) return "インポート"; if (key.equals("media")) return "画像 · GIF · 動画"; if (key.equals("home")) return "ホーム"; if (key.equals("settings")) return "設定"; if (key.equals("language")) return "言語"; if (key.equals("openHub")) return "Avatar Hubを開く"; if (key.equals("clearCache")) return "キャッシュを削除"; if (key.equals("cacheCleared")) return "キャッシュを削除しました"; if (key.equals("backHome")) return "ホームに戻る";
+        }
+        if (language.equals("de")) {
+            if (key.equals("creatorSpace")) return "Dein Creator-Bereich"; if (key.equals("homeLead")) return "Avatare erstellen, herunterladen und organisieren."; if (key.equals("ready")) return "BEREIT ZUM ERSTELLEN"; if (key.equals("makeAvatar")) return "Erstelle deinen nächsten Avatar"; if (key.equals("heroHint")) return "Editor wählen oder Bibliothek öffnen."; if (key.equals("create")) return "Avatar erstellen"; if (key.equals("library")) return "Bibliothek"; if (key.equals("editors")) return "Editoren"; if (key.equals("openEditor")) return "Editor öffnen"; if (key.equals("avatarHub")) return "Avatar Hub"; if (key.equals("import")) return "Importieren"; if (key.equals("media")) return "Bilder · GIFs · Videos"; if (key.equals("home")) return "Start"; if (key.equals("settings")) return "Einstellungen"; if (key.equals("language")) return "Sprache"; if (key.equals("openHub")) return "Avatar Hub öffnen"; if (key.equals("clearCache")) return "Cache leeren"; if (key.equals("cacheCleared")) return "Cache geleert"; if (key.equals("backHome")) return "Zur Startseite";
+        }
+        if (language.equals("fr")) {
+            if (key.equals("creatorSpace")) return "Votre espace créatif"; if (key.equals("homeLead")) return "Créez, téléchargez et organisez vos avatars."; if (key.equals("ready")) return "PRÊT À CRÉER"; if (key.equals("makeAvatar")) return "Créez votre prochain avatar"; if (key.equals("heroHint")) return "Choisissez un éditeur ou ouvrez la bibliothèque."; if (key.equals("create")) return "Créer un avatar"; if (key.equals("library")) return "Bibliothèque"; if (key.equals("editors")) return "Éditeurs"; if (key.equals("openEditor")) return "Ouvrir l’éditeur"; if (key.equals("avatarHub")) return "Avatar Hub"; if (key.equals("import")) return "Importer"; if (key.equals("media")) return "Images · GIF · Vidéos"; if (key.equals("home")) return "Accueil"; if (key.equals("settings")) return "Réglages"; if (key.equals("language")) return "Langue"; if (key.equals("openHub")) return "Ouvrir Avatar Hub"; if (key.equals("clearCache")) return "Vider le cache"; if (key.equals("cacheCleared")) return "Cache vidé"; if (key.equals("backHome")) return "Retour à l’accueil";
+        }
+        if (language.equals("pt")) {
+            if (key.equals("creatorSpace")) return "Seu espaço criativo"; if (key.equals("homeLead")) return "Crie, baixe e organize seus avatares."; if (key.equals("ready")) return "PRONTO PARA CRIAR"; if (key.equals("makeAvatar")) return "Crie seu próximo avatar"; if (key.equals("heroHint")) return "Escolha um editor ou abra sua biblioteca."; if (key.equals("create")) return "Criar avatar"; if (key.equals("library")) return "Biblioteca"; if (key.equals("editors")) return "Editores"; if (key.equals("openEditor")) return "Abrir editor"; if (key.equals("avatarHub")) return "Avatar Hub"; if (key.equals("import")) return "Importar"; if (key.equals("media")) return "Imagens · GIFs · Vídeos"; if (key.equals("home")) return "Início"; if (key.equals("settings")) return "Configurações"; if (key.equals("language")) return "Idioma"; if (key.equals("openHub")) return "Abrir Avatar Hub"; if (key.equals("clearCache")) return "Limpar cache"; if (key.equals("cacheCleared")) return "Cache limpo"; if (key.equals("backHome")) return "Voltar ao início";
+        }
+        return key;
+    }
+    private String languageName() { if (language.equals("es")) return "Español"; if (language.equals("zh")) return "中文"; if (language.equals("ja")) return "日本語"; if (language.equals("de")) return "Deutsch"; if (language.equals("fr")) return "Français"; if (language.equals("pt")) return "Português"; return "English"; }
+    private void cycleLanguage() {
+        String[] langs={"en","es","zh","ja","de","fr","pt"};
+        int i=0; for(int n=0;n<langs.length;n++) if(langs[n].equals(language)) i=n;
+        language=langs[(i+1)%langs.length]; prefs.edit().putString("language",language).apply(); showSettings();
+    }
+
     private void showSettings() {
         launcher.setVisibility(View.GONE);
         LinearLayout page = new LinearLayout(this);
@@ -557,7 +570,7 @@ public class MainActivity extends Activity {
         page.setBackgroundColor(bgColor);
 
         TextView title = new TextView(this);
-        title.setText("Settings");
+        title.setText(t("settings"));
         title.setTextColor(textColor);
         title.setTextSize(28);
         title.setTypeface(null, android.graphics.Typeface.BOLD);
@@ -569,21 +582,26 @@ public class MainActivity extends Activity {
         about.setTextSize(15);
         page.addView(about, new LinearLayout.LayoutParams(-1, dp(150)));
 
+        TextView languageButton = new TextView(this);
+        styleActionButton(languageButton, t("language") + ": " + languageName());
+        languageButton.setOnClickListener(v -> cycleLanguage());
+        page.addView(languageButton, new LinearLayout.LayoutParams(-1, dp(52)));
+        
         TextView hub = new TextView(this);
-        styleActionButton(hub, "Open Avatar Hub");
+        styleActionButton(hub, t("openHub"));
         hub.setOnClickListener(v -> pressAnimation(hub, v2 -> { root.removeView(page); showGallery(); }));
         page.addView(hub, new LinearLayout.LayoutParams(-1, dp(52)));
 
         TextView clear = new TextView(this);
-        styleActionButton(clear, "Clear WebView cache");
+        styleActionButton(clear, t("clearCache"));
         clear.setOnClickListener(v -> pressAnimation(clear, v2 -> {
             if (webView != null) webView.clearCache(true);
-            Toast.makeText(this, "WebView cache cleared", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, t("cacheCleared"), Toast.LENGTH_SHORT).show();
         }));
         page.addView(clear, new LinearLayout.LayoutParams(-1, dp(52)));
 
         TextView back = new TextView(this);
-        styleActionButton(back, "Back to Home");
+        styleActionButton(back, t("backHome"));
         back.setOnClickListener(v -> pressAnimation(back, v2 -> { root.removeView(page); showLauncher(); }));
         page.addView(back, new LinearLayout.LayoutParams(-1, dp(52)));
 
