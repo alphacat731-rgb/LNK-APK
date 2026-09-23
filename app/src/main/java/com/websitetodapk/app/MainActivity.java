@@ -64,7 +64,8 @@ public class MainActivity extends Activity {
     private int bgColor = Color.rgb(17,17,17);
     private int cardColor = Color.rgb(32,32,32);
     private int textColor = Color.WHITE;
-    private android.content.SharedPreferences prefs;\n    private String language = "en";
+    private android.content.SharedPreferences prefs;
+    private String language = "en";
     private File galleryBase;
     private ArrayList<File> allGalleryFiles = new ArrayList<>();
     private String galleryFilter = "all";
@@ -78,6 +79,9 @@ public class MainActivity extends Activity {
     @Override
     public void onCreate(Bundle b) {
         super.onCreate(b);
+        prefs = getSharedPreferences("app_prefs", MODE_PRIVATE);
+        language = prefs.getString("language", Locale.getDefault().getLanguage());
+        if (!language.equals("es") && !language.equals("zh") && !language.equals("ja") && !language.equals("de") && !language.equals("fr") && !language.equals("pt")) language = "en";
         loadLauncherConfig();
         buildRoot();
         showLauncher();
@@ -559,7 +563,8 @@ public class MainActivity extends Activity {
     private void cycleLanguage() {
         String[] langs={"en","es","zh","ja","de","fr","pt"};
         int i=0; for(int n=0;n<langs.length;n++) if(langs[n].equals(language)) i=n;
-        language=langs[(i+1)%langs.length]; prefs.edit().putString("language",language).apply();\n        View old=(View)root.getTag(); if(old!=null) root.removeView(old); showSettings();
+        language=langs[(i+1)%langs.length]; prefs.edit().putString("language",language).apply();
+        View old=(View)root.getTag(); if(old!=null) root.removeView(old); root.setTag(null); showSettings();
     }
 
     private void showSettings() {
