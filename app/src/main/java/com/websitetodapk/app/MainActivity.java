@@ -559,7 +559,7 @@ public class MainActivity extends Activity {
     private void cycleLanguage() {
         String[] langs={"en","es","zh","ja","de","fr","pt"};
         int i=0; for(int n=0;n<langs.length;n++) if(langs[n].equals(language)) i=n;
-        language=langs[(i+1)%langs.length]; prefs.edit().putString("language",language).apply(); showSettings();
+        language=langs[(i+1)%langs.length]; prefs.edit().putString("language",language).apply();\n        View old=(View)root.getTag(); if(old!=null) root.removeView(old); showSettings();
     }
 
     private void showSettings() {
