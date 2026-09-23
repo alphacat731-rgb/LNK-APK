@@ -204,6 +204,9 @@ public class MainActivity extends Activity {
         }
 
         // Collection: one clean row with a secondary import action.
+        ArrayList<File> dashboardFiles = new ArrayList<>();
+        File dashboardBase = getExternalMediaDirs().length > 0 ? getExternalMediaDirs()[0] : getExternalFilesDir(null);
+        if (dashboardBase != null) collectMedia(new File(dashboardBase, "GrokBot Avatars"), dashboardFiles);
         addSectionTitle(content, t("library"), "");
         LinearLayout collection = roundedPanel(dp(12), cardColor);
         collection.setGravity(Gravity.CENTER_VERTICAL);
