@@ -130,6 +130,10 @@ public class MainActivity extends Activity {
         launcher.setOrientation(LinearLayout.VERTICAL);
         launcher.setPadding(0, 0, 0, 0);
 
+        ArrayList<File> dashboardFiles = new ArrayList<>();
+        File dashboardBase = getExternalMediaDirs().length > 0 ? getExternalMediaDirs()[0] : getExternalFilesDir(null);
+        if (dashboardBase != null) collectMedia(new File(dashboardBase, "GrokBot Avatars"), dashboardFiles);
+
         ScrollView scroll = new ScrollView(this);
         scroll.setClipToPadding(false);
         scroll.setFillViewport(true);
@@ -137,40 +141,53 @@ public class MainActivity extends Activity {
 
         LinearLayout content = new LinearLayout(this);
         content.setOrientation(LinearLayout.VERTICAL);
-        content.setPadding(dp(16), dp(18), dp(16), dp(82));
+        content.setPadding(dp(16), dp(16), dp(16), dp(26));
 
-        // Header: quiet, typography-first, no decorative clutter.
+        // Header
         LinearLayout header = new LinearLayout(this);
         header.setGravity(Gravity.CENTER_VERTICAL);
+
         LinearLayout headerText = new LinearLayout(this);
         headerText.setOrientation(LinearLayout.VERTICAL);
-        headerText.addView(makeText("GROKBOT AVATAR HUB", 9, withAlpha(textColor, 115), true),
-                new LinearLayout.LayoutParams(-1, dp(18)));
-        headerText.addView(makeText(t("creatorSpace"), 25, textColor, true),
-                new LinearLayout.LayoutParams(-1, dp(34)));
-        header.addView(headerText, new LinearLayout.LayoutParams(0, dp(52), 1f));
+        headerText.addView(makeText("GROKBOT AVATAR HUB", 9, withAlpha(textColor, 110), true),
+                new LinearLayout.LayoutParams(-1, dp(17)));
+        headerText.addView(makeText(t("welcome"), 25, textColor, true),
+                new LinearLayout.LayoutParams(-1, dp(32)));
+        header.addView(headerText, new LinearLayout.LayoutParams(0, dp(49), 1f));
 
         TextView settingsIcon = makeIconButton("⚙");
         settingsIcon.setOnClickListener(v -> pressAnimation(settingsIcon, v2 -> showSettings()));
-        header.addView(settingsIcon, new LinearLayout.LayoutParams(dp(44), dp(44)));
+        header.addView(settingsIcon, new LinearLayout.LayoutParams(dp(48), dp(48)));
         content.addView(header);
 
-        content.addView(makeText(t("homeLead"),
-                12, withAlpha(textColor, 145), false),
-                new LinearLayout.LayoutParams(-1, dp(24)));
+        content.addView(makeText(t("homeLead"), 12, withAlpha(textColor, 150), false),
+                new LinearLayout.LayoutParams(-1, dp(26)));
 
-        // Primary action. One restrained surface instead of a giant pill.
-        LinearLayout hero = roundedPanel(dp(14), Color.rgb(24, 24, 24));
+        // Hero / primary action
+        LinearLayout hero = roundedPanel(dp(18), Color.rgb(22, 22, 22));
         hero.setOrientation(LinearLayout.VERTICAL);
-        hero.setPadding(dp(16), dp(12), dp(16), dp(12));
+        hero.setPadding(dp(16), dp(14), dp(16), dp(14));
 
-        hero.addView(makeText(t("ready"), 8, withAlpha(Color.WHITE, 145), true),
-                new LinearLayout.LayoutParams(-1, dp(15)));
-        hero.addView(makeText(t("makeAvatar"), 20, Color.WHITE, true),
-                new LinearLayout.LayoutParams(-1, dp(28)));
-        hero.addView(makeText(t("heroHint"), 10,
-                withAlpha(Color.WHITE, 145), false),
-                new LinearLayout.LayoutParams(-1, dp(21)));
+        LinearLayout heroTop = new LinearLayout(this);
+        heroTop.setGravity(Gravity.CENTER_VERTICAL);
+
+        TextView heroTag = makeText(t("heroTag"), 8, withAlpha(Color.WHITE, 125), true);
+        heroTop.addView(heroTag, new LinearLayout.LayoutParams(0, dp(18), 1f));
+
+        TextView editorCount = makeText(editors.size() + " " + t("editorsCount"), 9, withAlpha(Color.WHITE, 135), true);
+        editorCount.setGravity(Gravity.CENTER);
+        GradientDrawable editorCountBg = new GradientDrawable();
+        editorCountBg.setColor(Color.rgb(34, 34, 34));
+        editorCountBg.setCornerRadius(dp(12));
+        editorCountBg.setStroke(dp(1), withAlpha(Color.WHITE, 18));
+        editorCount.setBackground(editorCountBg);
+        heroTop.addView(editorCount, new LinearLayout.LayoutParams(dp(86), dp(28)));
+        hero.addView(heroTop);
+
+        hero.addView(makeText(t("makeAvatar"), 22, Color.WHITE, true),
+                new LinearLayout.LayoutParams(-1, dp(30)));
+        hero.addView(makeText(t("heroHint"), 11, withAlpha(Color.WHITE, 142), false),
+                new LinearLayout.LayoutParams(-1, dp(22)));
 
         LinearLayout heroActions = new LinearLayout(this);
         heroActions.setGravity(Gravity.CENTER_VERTICAL);
@@ -179,82 +196,141 @@ public class MainActivity extends Activity {
         create.setOnClickListener(v -> pressAnimation(create, v2 -> {
             if (!editors.isEmpty()) openEditor(0);
         }));
-        heroActions.addView(create, new LinearLayout.LayoutParams(dp(132), dp(34)));
+        heroActions.addView(create, new LinearLayout.LayoutParams(dp(146), dp(38)));
 
-        TextView library = makeActionPill(t("library"), Color.rgb(42, 42, 42), Color.WHITE);
+        TextView library = makeActionPill(t("library"), Color.rgb(40, 40, 40), Color.WHITE);
         library.setOnClickListener(v -> pressAnimation(library, v2 -> showGallery()));
-        LinearLayout.LayoutParams libraryLp = new LinearLayout.LayoutParams(dp(112), dp(34));
+        LinearLayout.LayoutParams libraryLp = new LinearLayout.LayoutParams(dp(110), dp(38));
         libraryLp.leftMargin = dp(8);
         heroActions.addView(library, libraryLp);
 
-        hero.addView(heroActions, new LinearLayout.LayoutParams(-1, dp(34)));
-        LinearLayout.LayoutParams heroLp = new LinearLayout.LayoutParams(-1, dp(126));
+        hero.addView(heroActions, new LinearLayout.LayoutParams(-1, dp(38)));
+        LinearLayout.LayoutParams heroLp = new LinearLayout.LayoutParams(-1, dp(154));
         heroLp.topMargin = dp(10);
         content.addView(hero, heroLp);
 
-        // Quick launch: compact list rows avoid clipped carousel cards.
-        addSectionTitle(content, t("editors"), "");
+        // Stats strip
+        LinearLayout stats = new LinearLayout(this);
+        stats.setPadding(0, dp(8), 0, 0);
+        stats.setGravity(Gravity.CENTER_VERTICAL);
+        stats.addView(makeStatTile(String.valueOf(dashboardFiles.size()), t("avatars"), "✦"),
+                new LinearLayout.LayoutParams(0, dp(70), 1f));
+        stats.addView(makeStatDivider());
+        stats.addView(makeStatTile(String.valueOf(editors.size()), t("editors"), "◈"),
+                new LinearLayout.LayoutParams(0, dp(70), 1f));
+        stats.addView(makeStatDivider());
+        stats.addView(makeStatTile(String.valueOf(countFavorites(dashboardFiles)), t("favorites"), "★"),
+                new LinearLayout.LayoutParams(0, dp(70), 1f));
+        content.addView(stats);
+
+        // Quick actions
+        addSectionTitle(content, t("quickActions"), t("quickActionsHint"));
+        LinearLayout quickRow = new LinearLayout(this);
+        quickRow.setGravity(Gravity.CENTER_VERTICAL);
+
+        LinearLayout importTile = makeQuickTile("＋", t("import"), t("importHint"));
+        importTile.setOnClickListener(v -> pressAnimation(importTile, v2 -> importAvatars()));
+        quickRow.addView(importTile, new LinearLayout.LayoutParams(0, dp(88), 1f));
+
+        LinearLayout favoritesTile = makeQuickTile("★", t("favorites"), t("favoritesHint"));
+        favoritesTile.setOnClickListener(v -> pressAnimation(favoritesTile, v2 -> {
+            galleryFilter = "favorite";
+            showGallery();
+        }));
+        LinearLayout.LayoutParams favLp = new LinearLayout.LayoutParams(0, dp(88), 1f);
+        favLp.leftMargin = dp(8);
+        quickRow.addView(favoritesTile, favLp);
+        content.addView(quickRow);
+
+        // Editors
+        addSectionTitle(content, t("editors"), t("editorsHint"));
+        HorizontalScrollView editorScroll = new HorizontalScrollView(this);
+        editorScroll.setHorizontalScrollBarEnabled(false);
+        editorScroll.setOverScrollMode(View.OVER_SCROLL_NEVER);
+        LinearLayout editorRow = new LinearLayout(this);
         for (int i = 0; i < editors.size(); i++) {
             final int index = i;
-            LinearLayout row = makeEditorRow(editors.get(i).name, i);
-            row.setOnClickListener(v -> pressAnimation(row, v2 -> openEditor(index)));
-            LinearLayout.LayoutParams rowLp = new LinearLayout.LayoutParams(-1, dp(58));
-            if (i > 0) rowLp.topMargin = dp(6);
-            content.addView(row, rowLp);
+            LinearLayout card = makeEditorTile(editors.get(i).name, i);
+            card.setOnClickListener(v -> pressAnimation(card, v2 -> openEditor(index)));
+            LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(dp(164), dp(126));
+            if (i > 0) p.leftMargin = dp(8);
+            editorRow.addView(card, p);
         }
+        editorScroll.addView(editorRow);
+        content.addView(editorScroll, new LinearLayout.LayoutParams(-1, dp(132)));
 
-        // Collection: one clean row with a secondary import action.
-        ArrayList<File> dashboardFiles = new ArrayList<>();
-        File dashboardBase = getExternalMediaDirs().length > 0 ? getExternalMediaDirs()[0] : getExternalFilesDir(null);
-        if (dashboardBase != null) collectMedia(new File(dashboardBase, "GrokBot Avatars"), dashboardFiles);
-        addSectionTitle(content, t("library"), "");
-        LinearLayout collection = roundedPanel(dp(12), cardColor);
-        collection.setGravity(Gravity.CENTER_VERTICAL);
-        collection.setPadding(dp(10), dp(8), dp(10), dp(8));
+        // Library overview
+        addSectionTitle(content, t("library"), t("libraryHint"));
+        LinearLayout libraryCard = roundedPanel(dp(16), cardColor);
+        libraryCard.setPadding(dp(12), dp(10), dp(12), dp(10));
 
-        TextView hubIcon = makeIconBadge("★", 38, Color.WHITE);
-        collection.addView(hubIcon, new LinearLayout.LayoutParams(dp(38), dp(38)));
+        LinearLayout libraryMain = new LinearLayout(this);
+        libraryMain.setGravity(Gravity.CENTER_VERTICAL);
 
-        LinearLayout collectionText = new LinearLayout(this);
-        collectionText.setOrientation(LinearLayout.VERTICAL);
-        collectionText.setPadding(dp(10), 0, dp(6), 0);
-        collectionText.addView(makeText(t("avatarHub"), 16, textColor, true),
-                new LinearLayout.LayoutParams(-1, dp(23)));
-        collectionText.addView(makeText(dashboardFiles.size() + "  •  " + t("media"),
-                10, withAlpha(textColor, 125), false),
-                new LinearLayout.LayoutParams(-1, dp(19)));
-        collection.addView(collectionText, new LinearLayout.LayoutParams(0, dp(42), 1f));
+        TextView libraryBadge = makeIconBadge("★", 44, Color.WHITE);
+        libraryMain.addView(libraryBadge, new LinearLayout.LayoutParams(dp(44), dp(44)));
 
-        TextView importText = makeText(t("import"), 10, textColor, true);
-        importText.setGravity(Gravity.CENTER);
-        GradientDrawable importBg = new GradientDrawable();
-        importBg.setColor(Color.TRANSPARENT);
-        importBg.setCornerRadius(dp(9));
-        importBg.setStroke(dp(1), withAlpha(textColor, 55));
-        importText.setBackground(importBg);
-        importText.setPadding(dp(9), 0, dp(9), 0);
-        importText.setOnClickListener(v -> pressAnimation(importText, v2 -> importAvatars()));
-        collection.addView(importText, new LinearLayout.LayoutParams(dp(58), dp(34)));
+        LinearLayout libraryText = new LinearLayout(this);
+        libraryText.setOrientation(LinearLayout.VERTICAL);
+        libraryText.setPadding(dp(10), 0, dp(8), 0);
+        libraryText.addView(makeText(t("avatarHub"), 16, textColor, true),
+                new LinearLayout.LayoutParams(-1, dp(22)));
+        libraryText.addView(makeText(dashboardFiles.size() + " " + t("savedItems"), 10, withAlpha(textColor, 120), false),
+                new LinearLayout.LayoutParams(-1, dp(18)));
+        libraryMain.addView(libraryText, new LinearLayout.LayoutParams(0, dp(44), 1f));
 
-        TextView open = makeText("›", 25, textColor, false);
+        TextView open = makeText("→", 20, withAlpha(textColor, 175), false);
         open.setGravity(Gravity.CENTER);
-        collection.addView(open, new LinearLayout.LayoutParams(dp(22), dp(42)));
-        collection.setOnClickListener(v -> pressAnimation(collection, v2 -> showGallery()));
-        content.addView(collection, new LinearLayout.LayoutParams(-1, dp(58)));
+        libraryMain.addView(open, new LinearLayout.LayoutParams(dp(28), dp(44)));
+        libraryCard.addView(libraryMain, new LinearLayout.LayoutParams(-1, dp(44)));
 
-        // Recent creations: compact and guaranteed not to clip text.
-        // Keep the home screen focused: recent files are available from Avatar Hub.\n
+        LinearLayout libraryActions = new LinearLayout(this);
+        libraryActions.setGravity(Gravity.CENTER_VERTICAL);
+        TextView manage = makeActionPill(t("openLibrary"), Color.rgb(40, 40, 40), Color.WHITE);
+        manage.setOnClickListener(v -> pressAnimation(manage, v2 -> showGallery()));
+        libraryActions.addView(manage, new LinearLayout.LayoutParams(0, dp(36), 1f));
+
+        TextView importSmall = makeActionPill(t("import"), Color.WHITE, Color.BLACK);
+        importSmall.setOnClickListener(v -> pressAnimation(importSmall, v2 -> importAvatars()));
+        LinearLayout.LayoutParams importLp = new LinearLayout.LayoutParams(dp(96), dp(36));
+        importLp.leftMargin = dp(8);
+        libraryActions.addView(importSmall, importLp);
+
+        LinearLayout.LayoutParams libCardLp = new LinearLayout.LayoutParams(-1, dp(104));
+        libCardLp.topMargin = dp(2);
+        libraryCard.addView(libraryActions, new LinearLayout.LayoutParams(-1, dp(36)));
+        content.addView(libraryCard, libCardLp);
+
+        // Recent creations
+        addRecentSection(content);
+
+        // Creator tip
+        addSectionTitle(content, t("creatorTip"), "");
+        LinearLayout tip = roundedPanel(dp(14), Color.rgb(18, 18, 18));
+        tip.setPadding(dp(12), dp(10), dp(12), dp(10));
+        TextView tipIcon = makeIconBadge("✦", 38, Color.WHITE);
+        tip.addView(tipIcon, new LinearLayout.LayoutParams(dp(38), dp(38)));
+
+        LinearLayout tipText = new LinearLayout(this);
+        tipText.setOrientation(LinearLayout.VERTICAL);
+        tipText.setPadding(dp(10), 0, 0, 0);
+        tipText.addView(makeText(t("creatorTipTitle"), 13, textColor, true),
+                new LinearLayout.LayoutParams(-1, dp(20)));
+        tipText.addView(makeText(t("creatorTipText"), 10, withAlpha(textColor, 115), false),
+                new LinearLayout.LayoutParams(-1, dp(30)));
+        tip.addView(tipText, new LinearLayout.LayoutParams(0, dp(38), 1f));
+        content.addView(tip, new LinearLayout.LayoutParams(-1, dp(60)));
 
         scroll.addView(content, new ScrollView.LayoutParams(-1, -2));
         launcher.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1f));
 
-        // Flat bottom navigation. No giant floating pill.
+        // Bottom navigation
         LinearLayout nav = new LinearLayout(this);
         nav.setGravity(Gravity.CENTER_VERTICAL);
-        nav.setPadding(dp(16), dp(4), dp(16), dp(4));
+        nav.setPadding(dp(10), dp(4), dp(10), dp(4));
         GradientDrawable navBg = new GradientDrawable();
         navBg.setColor(bgColor);
-        navBg.setStroke(dp(1), withAlpha(textColor, 18));
+        navBg.setStroke(dp(1), withAlpha(textColor, 16));
         nav.setBackground(navBg);
         nav.setElevation(dp(8));
 
@@ -265,12 +341,89 @@ public class MainActivity extends Activity {
         hub.setOnClickListener(v -> pressAnimation(hub, v2 -> showGallery()));
         settings.setOnClickListener(v -> pressAnimation(settings, v2 -> showSettings()));
 
-        nav.addView(home, new LinearLayout.LayoutParams(0, dp(52), 1f));
-        nav.addView(hub, new LinearLayout.LayoutParams(0, dp(52), 1f));
-        nav.addView(settings, new LinearLayout.LayoutParams(0, dp(52), 1f));
-        launcher.addView(nav, new LinearLayout.LayoutParams(-1, dp(60)));
+        nav.addView(home, new LinearLayout.LayoutParams(0, dp(54), 1f));
+        nav.addView(hub, new LinearLayout.LayoutParams(0, dp(54), 1f));
+        nav.addView(settings, new LinearLayout.LayoutParams(0, dp(54), 1f));
+        launcher.addView(nav, new LinearLayout.LayoutParams(-1, dp(62)));
 
         animateLauncherEntrance();
+    }
+
+    private View makeStatDivider() {
+        View line = new View(this);
+        line.setBackgroundColor(withAlpha(textColor, 20));
+        return line;
+    }
+
+    private int countFavorites(ArrayList<File> files) {
+        int count = 0;
+        for (File f : files) if (isFavorite(f)) count++;
+        return count;
+    }
+
+    private LinearLayout makeStatTile(String value, String label, String glyph) {
+        LinearLayout tile = roundedPanel(dp(12), Color.rgb(18, 18, 18));
+        tile.setGravity(Gravity.CENTER);
+        tile.setPadding(dp(5), dp(6), dp(5), dp(6));
+
+        TextView icon = makeText(glyph, 12, withAlpha(textColor, 135), true);
+        icon.setGravity(Gravity.CENTER);
+        tile.addView(icon, new LinearLayout.LayoutParams(-1, dp(15)));
+
+        TextView number = makeText(value, 19, textColor, true);
+        number.setGravity(Gravity.CENTER);
+        number.setIncludeFontPadding(false);
+        tile.addView(number, new LinearLayout.LayoutParams(-1, dp(23)));
+
+        TextView caption = makeText(label, 8, withAlpha(textColor, 105), true);
+        caption.setGravity(Gravity.CENTER);
+        caption.setIncludeFontPadding(false);
+        tile.addView(caption, new LinearLayout.LayoutParams(-1, dp(15)));
+        return tile;
+    }
+
+    private LinearLayout makeQuickTile(String glyph, String title, String sub) {
+        LinearLayout tile = roundedPanel(dp(14), cardColor);
+        tile.setOrientation(LinearLayout.HORIZONTAL);
+        tile.setGravity(Gravity.CENTER_VERTICAL);
+        tile.setPadding(dp(10), dp(8), dp(10), dp(8));
+
+        TextView icon = makeIconBadge(glyph, 38, Color.WHITE);
+        icon.setTextSize(17);
+        tile.addView(icon, new LinearLayout.LayoutParams(dp(38), dp(38)));
+
+        LinearLayout text = new LinearLayout(this);
+        text.setOrientation(LinearLayout.VERTICAL);
+        text.setPadding(dp(9), 0, 0, 0);
+        text.addView(makeText(title, 12, textColor, true),
+                new LinearLayout.LayoutParams(-1, dp(20)));
+        text.addView(makeText(sub, 9, withAlpha(textColor, 105), false),
+                new LinearLayout.LayoutParams(-1, dp(23)));
+        tile.addView(text, new LinearLayout.LayoutParams(0, dp(43), 1f));
+        return tile;
+    }
+
+    private LinearLayout makeEditorTile(String label, int index) {
+        LinearLayout card = roundedPanel(dp(16), cardColor);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(dp(12), dp(10), dp(12), dp(10));
+
+        LinearLayout top = new LinearLayout(this);
+        top.setGravity(Gravity.CENTER_VERTICAL);
+
+        TextView badge = makeIconBadge(String.valueOf(index + 1), 34, Color.WHITE);
+        top.addView(badge, new LinearLayout.LayoutParams(dp(34), dp(34)));
+
+        TextView arrow = makeText("↗", 16, withAlpha(textColor, 155), false);
+        arrow.setGravity(Gravity.CENTER);
+        top.addView(arrow, new LinearLayout.LayoutParams(0, dp(34), 1f));
+        card.addView(top);
+
+        card.addView(makeText(label, 14, textColor, true),
+                new LinearLayout.LayoutParams(-1, dp(21)));
+        card.addView(makeText(t("openEditor"), 9, withAlpha(textColor, 105), false),
+                new LinearLayout.LayoutParams(-1, dp(17)));
+        return card;
     }
 
     private void addStatWithDivider(LinearLayout parent, String value, String label, boolean divider) {
@@ -498,70 +651,325 @@ public class MainActivity extends Activity {
         if (base != null) collectMedia(new File(base, "GrokBot Avatars"), recent);
         Collections.sort(recent, (a,b) -> Long.compare(b.lastModified(), a.lastModified()));
 
-        addSectionTitle(parent, "Recent creations", recent.isEmpty() ? "Your newest avatars will appear here" : "Tap an avatar to preview it");
+        addSectionTitle(parent, t("recent"), recent.isEmpty() ? t("recentHint") : t("recentTapHint"));
         if (recent.isEmpty()) {
-            LinearLayout empty = roundedPanel(dp(12), cardColor);
+            LinearLayout empty = roundedPanel(dp(14), cardColor);
             empty.setGravity(Gravity.CENTER_VERTICAL);
             empty.setPadding(dp(10), dp(8), dp(12), dp(8));
 
-            TextView icon = makeIconBadge("✦", 36, Color.WHITE);
-            empty.addView(icon, new LinearLayout.LayoutParams(dp(36), dp(36)));
+            TextView icon = makeIconBadge("✦", 38, Color.WHITE);
+            empty.addView(icon, new LinearLayout.LayoutParams(dp(38), dp(38)));
 
             LinearLayout tx = new LinearLayout(this);
             tx.setOrientation(LinearLayout.VERTICAL);
             tx.setPadding(dp(10), 0, 0, 0);
-            tx.addView(makeText("Nothing here yet", 14, textColor, true),
-                    new LinearLayout.LayoutParams(-1, dp(20)));
-            tx.addView(makeText("Download an avatar from any editor.", 10,
-                    withAlpha(textColor, 115), false),
-                    new LinearLayout.LayoutParams(-1, dp(17)));
-            empty.addView(tx, new LinearLayout.LayoutParams(0, dp(38), 1f));
-            parent.addView(empty, new LinearLayout.LayoutParams(-1, dp(54)));
+            tx.addView(makeText(t("recentEmpty"), 13, textColor, true),
+                    new LinearLayout.LayoutParams(-1, dp(19)));
+            tx.addView(makeText(t("recentEmptyHint"), 9, withAlpha(textColor, 110), false),
+                    new LinearLayout.LayoutParams(-1, dp(18)));
+            empty.addView(tx, new LinearLayout.LayoutParams(0, dp(37), 1f));
+            parent.addView(empty, new LinearLayout.LayoutParams(-1, dp(56)));
             return;
         }
 
         HorizontalScrollView hs = new HorizontalScrollView(this);
         hs.setHorizontalScrollBarEnabled(false);
+        hs.setOverScrollMode(View.OVER_SCROLL_NEVER);
         LinearLayout row = new LinearLayout(this);
         for (int i = 0; i < Math.min(6, recent.size()); i++) {
             final File file = recent.get(i);
-            LinearLayout thumb = roundedPanel(dp(10), cardColor);
+            LinearLayout thumb = roundedPanel(dp(11), cardColor);
             thumb.setPadding(dp(3), dp(3), dp(3), dp(3));
             ImageView p = new ImageView(this);
             p.setScaleType(ImageView.ScaleType.CENTER_CROP);
             String n = file.getName().toLowerCase(Locale.US);
-            if (n.endsWith(".mp4") || n.endsWith(".webm")) p.setImageResource(android.R.drawable.ic_media_play);
-            else p.setImageDrawable(android.graphics.drawable.Drawable.createFromPath(file.getAbsolutePath()));
-            thumb.addView(p, new LinearLayout.LayoutParams(dp(74), dp(74)));
+            if (n.endsWith(".mp4") || n.endsWith(".webm")) {
+                p.setImageResource(android.R.drawable.ic_media_play);
+            } else {
+                p.setImageDrawable(android.graphics.drawable.Drawable.createFromPath(file.getAbsolutePath()));
+            }
+            thumb.addView(p, new LinearLayout.LayoutParams(dp(78), dp(78)));
             thumb.setOnClickListener(v -> pressAnimation(thumb, v2 -> openMedia(file)));
-            LinearLayout.LayoutParams tp = new LinearLayout.LayoutParams(dp(80), dp(80));
-            tp.setMargins(0, 0, dp(9), 0);
+            LinearLayout.LayoutParams tp = new LinearLayout.LayoutParams(dp(84), dp(84));
+            if (i > 0) tp.leftMargin = dp(8);
             row.addView(thumb, tp);
         }
         hs.addView(row);
         parent.addView(hs, new LinearLayout.LayoutParams(-1, dp(88)));
     }
+
     private String t(String key) {
         if (language.equals("es")) {
-            if (key.equals("creatorSpace")) return "Tu espacio creativo"; if (key.equals("homeLead")) return "Crea, descarga y organiza tus avatares."; if (key.equals("ready")) return "LISTO PARA CREAR"; if (key.equals("makeAvatar")) return "Crea tu próximo avatar"; if (key.equals("heroHint")) return "Elige un editor o abre tu biblioteca."; if (key.equals("create")) return "Crear avatar"; if (key.equals("library")) return "Biblioteca"; if (key.equals("editors")) return "Editores"; if (key.equals("openEditor")) return "Abrir editor"; if (key.equals("avatarHub")) return "Avatar Hub"; if (key.equals("import")) return "Importar"; if (key.equals("media")) return "imágenes · GIFs · vídeos"; if (key.equals("home")) return "Inicio"; if (key.equals("settings")) return "Ajustes"; if (key.equals("language")) return "Idioma"; if (key.equals("openHub")) return "Abrir Avatar Hub"; if (key.equals("clearCache")) return "Borrar caché"; if (key.equals("cacheCleared")) return "Caché borrada"; if (key.equals("backHome")) return "Volver al inicio";
+            if (key.equals("welcome")) return "Tu espacio creativo";
+            if (key.equals("homeLead")) return "Crea, guarda y abre tus avatares desde un solo lugar.";
+            if (key.equals("heroTag")) return "CENTRO DE CREACIÓN";
+            if (key.equals("editorsCount")) return "editores";
+            if (key.equals("makeAvatar")) return "Crea tu próximo avatar";
+            if (key.equals("heroHint")) return "Elige un editor, empieza de cero o abre tu biblioteca.";
+            if (key.equals("create")) return "Empezar a crear";
+            if (key.equals("library")) return "Biblioteca";
+            if (key.equals("quickActions")) return "Acciones rápidas";
+            if (key.equals("quickActionsHint")) return "Las cosas que haces más a menudo";
+            if (key.equals("import")) return "Importar";
+            if (key.equals("importHint")) return "Añade archivos";
+            if (key.equals("favorites")) return "Favoritos";
+            if (key.equals("favoritesHint")) return "Tus avatares guardados";
+            if (key.equals("avatars")) return "Avatares";
+            if (key.equals("editors")) return "Editores";
+            if (key.equals("openEditor")) return "Abrir editor";
+            if (key.equals("editorsHint")) return "Elige dónde quieres crear";
+            if (key.equals("avatarHub")) return "Avatar Hub";
+            if (key.equals("libraryHint")) return "Todo tu contenido, ordenado";
+            if (key.equals("savedItems")) return "elementos guardados";
+            if (key.equals("openLibrary")) return "Abrir biblioteca";
+            if (key.equals("recent")) return "Creaciones recientes";
+            if (key.equals("recentHint")) return "Tus avatares más nuevos aparecerán aquí";
+            if (key.equals("recentTapHint")) return "Toca una creación para verla";
+            if (key.equals("recentEmpty")) return "Todavía no hay creaciones";
+            if (key.equals("recentEmptyHint")) return "Descarga un avatar desde cualquier editor.";
+            if (key.equals("creatorTip")) return "Consejo del creador";
+            if (key.equals("creatorTipTitle")) return "Todo queda organizado automáticamente";
+            if (key.equals("creatorTipText")) return "Las imágenes, GIFs y vídeos se guardan en sus carpetas.";
+            if (key.equals("home")) return "Inicio";
+            if (key.equals("settings")) return "Ajustes";
+            if (key.equals("language")) return "Idioma";
+            if (key.equals("openHub")) return "Abrir Avatar Hub";
+            if (key.equals("clearCache")) return "Borrar caché";
+            if (key.equals("cacheCleared")) return "Caché borrada";
+            if (key.equals("backHome")) return "Volver al inicio";
+        } else if (language.equals("zh")) {
+            if (key.equals("welcome")) return "你的创作空间";
+            if (key.equals("homeLead")) return "在一个地方创建、保存和打开你的头像。";
+            if (key.equals("heroTag")) return "创作中心";
+            if (key.equals("editorsCount")) return "个编辑器";
+            if (key.equals("makeAvatar")) return "创建你的下一个头像";
+            if (key.equals("heroHint")) return "选择编辑器、从零开始或打开头像库。";
+            if (key.equals("create")) return "开始创作";
+            if (key.equals("library")) return "头像库";
+            if (key.equals("quickActions")) return "快速操作";
+            if (key.equals("quickActionsHint")) return "最常用的功能";
+            if (key.equals("import")) return "导入";
+            if (key.equals("importHint")) return "添加文件";
+            if (key.equals("favorites")) return "收藏";
+            if (key.equals("favoritesHint")) return "你保存的头像";
+            if (key.equals("avatars")) return "头像";
+            if (key.equals("editors")) return "编辑器";
+            if (key.equals("openEditor")) return "打开编辑器";
+            if (key.equals("editorsHint")) return "选择你的创作工具";
+            if (key.equals("avatarHub")) return "Avatar Hub";
+            if (key.equals("libraryHint")) return "你的内容都在这里";
+            if (key.equals("savedItems")) return "个已保存项目";
+            if (key.equals("openLibrary")) return "打开头像库";
+            if (key.equals("recent")) return "最近创建";
+            if (key.equals("recentHint")) return "最新头像会显示在这里";
+            if (key.equals("recentTapHint")) return "点击查看头像";
+            if (key.equals("recentEmpty")) return "还没有创建内容";
+            if (key.equals("recentEmptyHint")) return "从任意编辑器下载一个头像即可。";
+            if (key.equals("creatorTip")) return "创作提示";
+            if (key.equals("creatorTipTitle")) return "内容会自动整理";
+            if (key.equals("creatorTipText")) return "图片、GIF 和视频会自动分类保存。";
+            if (key.equals("home")) return "主页";
+            if (key.equals("settings")) return "设置";
+            if (key.equals("language")) return "语言";
+            if (key.equals("openHub")) return "打开 Avatar Hub";
+            if (key.equals("clearCache")) return "清除缓存";
+            if (key.equals("cacheCleared")) return "缓存已清除";
+            if (key.equals("backHome")) return "返回主页";
+        } else if (language.equals("ja")) {
+            if (key.equals("welcome")) return "クリエイタースペース";
+            if (key.equals("homeLead")) return "アバターの作成・保存・起動をひとつに。";
+            if (key.equals("heroTag")) return "クリエイターデスク";
+            if (key.equals("editorsCount")) return "エディター";
+            if (key.equals("makeAvatar")) return "次のアバターを作ろう";
+            if (key.equals("heroHint")) return "エディターを選ぶか、ライブラリを開きます。";
+            if (key.equals("create")) return "作成を始める";
+            if (key.equals("library")) return "ライブラリ";
+            if (key.equals("quickActions")) return "クイック操作";
+            if (key.equals("quickActionsHint")) return "よく使う機能";
+            if (key.equals("import")) return "インポート";
+            if (key.equals("importHint")) return "ファイルを追加";
+            if (key.equals("favorites")) return "お気に入り";
+            if (key.equals("favoritesHint")) return "保存したアバター";
+            if (key.equals("avatars")) return "アバター";
+            if (key.equals("editors")) return "エディター";
+            if (key.equals("openEditor")) return "エディターを開く";
+            if (key.equals("editorsHint")) return "使いたい作成ツールを選択";
+            if (key.equals("avatarHub")) return "Avatar Hub";
+            if (key.equals("libraryHint")) return "コンテンツをまとめて管理";
+            if (key.equals("savedItems")) return "件の保存アイテム";
+            if (key.equals("openLibrary")) return "ライブラリを開く";
+            if (key.equals("recent")) return "最近の作品";
+            if (key.equals("recentHint")) return "新しいアバターがここに表示されます";
+            if (key.equals("recentTapHint")) return "タップしてプレビュー";
+            if (key.equals("recentEmpty")) return "まだ作品がありません";
+            if (key.equals("recentEmptyHint")) return "エディターからアバターを保存してみよう。";
+            if (key.equals("creatorTip")) return "クリエイターヒント";
+            if (key.equals("creatorTipTitle")) return "ファイルは自動で整理されます";
+            if (key.equals("creatorTipText")) return "画像、GIF、動画を種類ごとに保存します。";
+            if (key.equals("home")) return "ホーム";
+            if (key.equals("settings")) return "設定";
+            if (key.equals("language")) return "言語";
+            if (key.equals("openHub")) return "Avatar Hubを開く";
+            if (key.equals("clearCache")) return "キャッシュを削除";
+            if (key.equals("cacheCleared")) return "キャッシュを削除しました";
+            if (key.equals("backHome")) return "ホームに戻る";
+        } else if (language.equals("de")) {
+            if (key.equals("welcome")) return "Dein Creator-Bereich";
+            if (key.equals("homeLead")) return "Avatare erstellen, speichern und starten – an einem Ort.";
+            if (key.equals("heroTag")) return "CREATOR-DESK";
+            if (key.equals("editorsCount")) return "Editoren";
+            if (key.equals("makeAvatar")) return "Erstelle deinen nächsten Avatar";
+            if (key.equals("heroHint")) return "Editor wählen, neu starten oder Bibliothek öffnen.";
+            if (key.equals("create")) return "Erstellung starten";
+            if (key.equals("library")) return "Bibliothek";
+            if (key.equals("quickActions")) return "Schnellaktionen";
+            if (key.equals("quickActionsHint")) return "Die wichtigsten Funktionen";
+            if (key.equals("import")) return "Importieren";
+            if (key.equals("importHint")) return "Dateien hinzufügen";
+            if (key.equals("favorites")) return "Favoriten";
+            if (key.equals("favoritesHint")) return "Gespeicherte Avatare";
+            if (key.equals("avatars")) return "Avatare";
+            if (key.equals("editors")) return "Editoren";
+            if (key.equals("openEditor")) return "Editor öffnen";
+            if (key.equals("editorsHint")) return "Wähle dein Creator-Tool";
+            if (key.equals("avatarHub")) return "Avatar Hub";
+            if (key.equals("libraryHint")) return "Alle Inhalte an einem Ort";
+            if (key.equals("savedItems")) return "gespeicherte Elemente";
+            if (key.equals("openLibrary")) return "Bibliothek öffnen";
+            if (key.equals("recent")) return "Letzte Kreationen";
+            if (key.equals("recentHint")) return "Neue Avatare erscheinen hier";
+            if (key.equals("recentTapHint")) return "Tippe auf eine Kreation zum Anzeigen";
+            if (key.equals("recentEmpty")) return "Noch keine Kreationen";
+            if (key.equals("recentEmptyHint")) return "Lade einen Avatar aus einem Editor herunter.";
+            if (key.equals("creatorTip")) return "Creator-Tipp";
+            if (key.equals("creatorTipTitle")) return "Alles wird automatisch sortiert";
+            if (key.equals("creatorTipText")) return "Bilder, GIFs und Videos werden automatisch abgelegt.";
+            if (key.equals("home")) return "Start";
+            if (key.equals("settings")) return "Einstellungen";
+            if (key.equals("language")) return "Sprache";
+            if (key.equals("openHub")) return "Avatar Hub öffnen";
+            if (key.equals("clearCache")) return "Cache leeren";
+            if (key.equals("cacheCleared")) return "Cache geleert";
+            if (key.equals("backHome")) return "Zur Startseite";
+        } else if (language.equals("fr")) {
+            if (key.equals("welcome")) return "Votre espace créatif";
+            if (key.equals("homeLead")) return "Créez, enregistrez et lancez vos avatars au même endroit.";
+            if (key.equals("heroTag")) return "ESPACE CRÉATION";
+            if (key.equals("editorsCount")) return "éditeurs";
+            if (key.equals("makeAvatar")) return "Créez votre prochain avatar";
+            if (key.equals("heroHint")) return "Choisissez un éditeur ou ouvrez votre bibliothèque.";
+            if (key.equals("create")) return "Commencer";
+            if (key.equals("library")) return "Bibliothèque";
+            if (key.equals("quickActions")) return "Actions rapides";
+            if (key.equals("quickActionsHint")) return "Les fonctions que vous utilisez le plus";
+            if (key.equals("import")) return "Importer";
+            if (key.equals("importHint")) return "Ajouter des fichiers";
+            if (key.equals("favorites")) return "Favoris";
+            if (key.equals("favoritesHint")) return "Vos avatars enregistrés";
+            if (key.equals("avatars")) return "Avatars";
+            if (key.equals("editors")) return "Éditeurs";
+            if (key.equals("openEditor")) return "Ouvrir l’éditeur";
+            if (key.equals("editorsHint")) return "Choisissez votre outil de création";
+            if (key.equals("avatarHub")) return "Avatar Hub";
+            if (key.equals("libraryHint")) return "Tout votre contenu au même endroit";
+            if (key.equals("savedItems")) return "éléments enregistrés";
+            if (key.equals("openLibrary")) return "Ouvrir la bibliothèque";
+            if (key.equals("recent")) return "Créations récentes";
+            if (key.equals("recentHint")) return "Vos avatars les plus récents apparaîtront ici";
+            if (key.equals("recentTapHint")) return "Touchez une création pour la voir";
+            if (key.equals("recentEmpty")) return "Aucune création pour le moment";
+            if (key.equals("recentEmptyHint")) return "Téléchargez un avatar depuis un éditeur.";
+            if (key.equals("creatorTip")) return "Astuce créateur";
+            if (key.equals("creatorTipTitle")) return "Tout est organisé automatiquement";
+            if (key.equals("creatorTipText")) return "Images, GIF et vidéos sont classés dans leurs dossiers.";
+            if (key.equals("home")) return "Accueil";
+            if (key.equals("settings")) return "Réglages";
+            if (key.equals("language")) return "Langue";
+            if (key.equals("openHub")) return "Ouvrir Avatar Hub";
+            if (key.equals("clearCache")) return "Vider le cache";
+            if (key.equals("cacheCleared")) return "Cache vidé";
+            if (key.equals("backHome")) return "Retour à l’accueil";
+        } else if (language.equals("pt")) {
+            if (key.equals("welcome")) return "Seu espaço criativo";
+            if (key.equals("homeLead")) return "Crie, salve e abra seus avatares em um só lugar.";
+            if (key.equals("heroTag")) return "CENTRO DE CRIAÇÃO";
+            if (key.equals("editorsCount")) return "editores";
+            if (key.equals("makeAvatar")) return "Crie seu próximo avatar";
+            if (key.equals("heroHint")) return "Escolha um editor ou abra sua biblioteca.";
+            if (key.equals("create")) return "Começar a criar";
+            if (key.equals("library")) return "Biblioteca";
+            if (key.equals("quickActions")) return "Ações rápidas";
+            if (key.equals("quickActionsHint")) return "As funções que você mais usa";
+            if (key.equals("import")) return "Importar";
+            if (key.equals("importHint")) return "Adicionar arquivos";
+            if (key.equals("favorites")) return "Favoritos";
+            if (key.equals("favoritesHint")) return "Seus avatares salvos";
+            if (key.equals("avatars")) return "Avatares";
+            if (key.equals("editors")) return "Editores";
+            if (key.equals("openEditor")) return "Abrir editor";
+            if (key.equals("editorsHint")) return "Escolha sua ferramenta de criação";
+            if (key.equals("avatarHub")) return "Avatar Hub";
+            if (key.equals("libraryHint")) return "Todo o seu conteúdo em um só lugar";
+            if (key.equals("savedItems")) return "itens salvos";
+            if (key.equals("openLibrary")) return "Abrir biblioteca";
+            if (key.equals("recent")) return "Criações recentes";
+            if (key.equals("recentHint")) return "Seus avatares mais novos aparecerão aqui";
+            if (key.equals("recentTapHint")) return "Toque para visualizar";
+            if (key.equals("recentEmpty")) return "Ainda não há criações";
+            if (key.equals("recentEmptyHint")) return "Baixe um avatar de qualquer editor.";
+            if (key.equals("creatorTip")) return "Dica do criador";
+            if (key.equals("creatorTipTitle")) return "Tudo é organizado automaticamente";
+            if (key.equals("creatorTipText")) return "Imagens, GIFs e vídeos são guardados nas pastas certas.";
+            if (key.equals("home")) return "Início";
+            if (key.equals("settings")) return "Configurações";
+            if (key.equals("language")) return "Idioma";
+            if (key.equals("openHub")) return "Abrir Avatar Hub";
+            if (key.equals("clearCache")) return "Limpar cache";
+            if (key.equals("cacheCleared")) return "Cache limpo";
+            if (key.equals("backHome")) return "Voltar ao início";
         }
-        if (language.equals("zh")) {
-            if (key.equals("creatorSpace")) return "你的创作空间"; if (key.equals("homeLead")) return "创建、下载和整理你的头像。"; if (key.equals("ready")) return "准备开始"; if (key.equals("makeAvatar")) return "创建你的下一个头像"; if (key.equals("heroHint")) return "选择编辑器或打开头像库。"; if (key.equals("create")) return "创建头像"; if (key.equals("library")) return "头像库"; if (key.equals("editors")) return "编辑器"; if (key.equals("openEditor")) return "打开编辑器"; if (key.equals("avatarHub")) return "Avatar Hub"; if (key.equals("import")) return "导入"; if (key.equals("media")) return "图片 · GIF · 视频"; if (key.equals("home")) return "主页"; if (key.equals("settings")) return "设置"; if (key.equals("language")) return "语言"; if (key.equals("openHub")) return "打开 Avatar Hub"; if (key.equals("clearCache")) return "清除缓存"; if (key.equals("cacheCleared")) return "缓存已清除"; if (key.equals("backHome")) return "返回主页";
-        }
-        if (language.equals("ja")) {
-            if (key.equals("creatorSpace")) return "クリエイタースペース"; if (key.equals("homeLead")) return "アバターを作成・保存・整理。"; if (key.equals("ready")) return "作成を始めよう"; if (key.equals("makeAvatar")) return "次のアバターを作成"; if (key.equals("heroHint")) return "エディターを選ぶかライブラリを開きます。"; if (key.equals("create")) return "アバターを作成"; if (key.equals("library")) return "ライブラリ"; if (key.equals("editors")) return "エディター"; if (key.equals("openEditor")) return "エディターを開く"; if (key.equals("avatarHub")) return "Avatar Hub"; if (key.equals("import")) return "インポート"; if (key.equals("media")) return "画像 · GIF · 動画"; if (key.equals("home")) return "ホーム"; if (key.equals("settings")) return "設定"; if (key.equals("language")) return "言語"; if (key.equals("openHub")) return "Avatar Hubを開く"; if (key.equals("clearCache")) return "キャッシュを削除"; if (key.equals("cacheCleared")) return "キャッシュを削除しました"; if (key.equals("backHome")) return "ホームに戻る";
-        }
-        if (language.equals("de")) {
-            if (key.equals("creatorSpace")) return "Dein Creator-Bereich"; if (key.equals("homeLead")) return "Avatare erstellen, herunterladen und organisieren."; if (key.equals("ready")) return "BEREIT ZUM ERSTELLEN"; if (key.equals("makeAvatar")) return "Erstelle deinen nächsten Avatar"; if (key.equals("heroHint")) return "Editor wählen oder Bibliothek öffnen."; if (key.equals("create")) return "Avatar erstellen"; if (key.equals("library")) return "Bibliothek"; if (key.equals("editors")) return "Editoren"; if (key.equals("openEditor")) return "Editor öffnen"; if (key.equals("avatarHub")) return "Avatar Hub"; if (key.equals("import")) return "Importieren"; if (key.equals("media")) return "Bilder · GIFs · Videos"; if (key.equals("home")) return "Start"; if (key.equals("settings")) return "Einstellungen"; if (key.equals("language")) return "Sprache"; if (key.equals("openHub")) return "Avatar Hub öffnen"; if (key.equals("clearCache")) return "Cache leeren"; if (key.equals("cacheCleared")) return "Cache geleert"; if (key.equals("backHome")) return "Zur Startseite";
-        }
-        if (language.equals("fr")) {
-            if (key.equals("creatorSpace")) return "Votre espace créatif"; if (key.equals("homeLead")) return "Créez, téléchargez et organisez vos avatars."; if (key.equals("ready")) return "PRÊT À CRÉER"; if (key.equals("makeAvatar")) return "Créez votre prochain avatar"; if (key.equals("heroHint")) return "Choisissez un éditeur ou ouvrez la bibliothèque."; if (key.equals("create")) return "Créer un avatar"; if (key.equals("library")) return "Bibliothèque"; if (key.equals("editors")) return "Éditeurs"; if (key.equals("openEditor")) return "Ouvrir l’éditeur"; if (key.equals("avatarHub")) return "Avatar Hub"; if (key.equals("import")) return "Importer"; if (key.equals("media")) return "Images · GIF · Vidéos"; if (key.equals("home")) return "Accueil"; if (key.equals("settings")) return "Réglages"; if (key.equals("language")) return "Langue"; if (key.equals("openHub")) return "Ouvrir Avatar Hub"; if (key.equals("clearCache")) return "Vider le cache"; if (key.equals("cacheCleared")) return "Cache vidé"; if (key.equals("backHome")) return "Retour à l’accueil";
-        }
-        if (language.equals("pt")) {
-            if (key.equals("creatorSpace")) return "Seu espaço criativo"; if (key.equals("homeLead")) return "Crie, baixe e organize seus avatares."; if (key.equals("ready")) return "PRONTO PARA CRIAR"; if (key.equals("makeAvatar")) return "Crie seu próximo avatar"; if (key.equals("heroHint")) return "Escolha um editor ou abra sua biblioteca."; if (key.equals("create")) return "Criar avatar"; if (key.equals("library")) return "Biblioteca"; if (key.equals("editors")) return "Editores"; if (key.equals("openEditor")) return "Abrir editor"; if (key.equals("avatarHub")) return "Avatar Hub"; if (key.equals("import")) return "Importar"; if (key.equals("media")) return "Imagens · GIFs · Vídeos"; if (key.equals("home")) return "Início"; if (key.equals("settings")) return "Configurações"; if (key.equals("language")) return "Idioma"; if (key.equals("openHub")) return "Abrir Avatar Hub"; if (key.equals("clearCache")) return "Limpar cache"; if (key.equals("cacheCleared")) return "Cache limpo"; if (key.equals("backHome")) return "Voltar ao início";
-        }
+
+        // English is the source language; keep it explicit so missing keys never leak into the UI.
+        if (key.equals("welcome")) return "Creator space";
+        if (key.equals("homeLead")) return "Create, save and launch your avatars from one place.";
+        if (key.equals("heroTag")) return "CREATOR DESK";
+        if (key.equals("editorsCount")) return "editors";
+        if (key.equals("makeAvatar")) return "Build your next avatar";
+        if (key.equals("heroHint")) return "Pick an editor, start fresh, or open your library.";
+        if (key.equals("create")) return "Start creating";
+        if (key.equals("library")) return "Library";
+        if (key.equals("quickActions")) return "Quick actions";
+        if (key.equals("quickActionsHint")) return "Things you use most";
+        if (key.equals("import")) return "Import";
+        if (key.equals("importHint")) return "Add files";
+        if (key.equals("favorites")) return "Favorites";
+        if (key.equals("favoritesHint")) return "Your saved avatars";
+        if (key.equals("avatars")) return "Avatars";
+        if (key.equals("editors")) return "Editors";
+        if (key.equals("openEditor")) return "Open editor";
+        if (key.equals("editorsHint")) return "Choose where you want to create";
+        if (key.equals("avatarHub")) return "Avatar Hub";
+        if (key.equals("libraryHint")) return "All your content, organized";
+        if (key.equals("savedItems")) return "saved items";
+        if (key.equals("openLibrary")) return "Open library";
+        if (key.equals("recent")) return "Recent creations";
+        if (key.equals("recentHint")) return "Your newest avatars will appear here";
+        if (key.equals("recentTapHint")) return "Tap a creation to preview it";
+        if (key.equals("recentEmpty")) return "Nothing here yet";
+        if (key.equals("recentEmptyHint")) return "Download an avatar from any editor.";
+        if (key.equals("creatorTip")) return "Creator tip";
+        if (key.equals("creatorTipTitle")) return "Everything stays organized";
+        if (key.equals("creatorTipText")) return "Images, GIFs and videos are automatically sorted into folders.";
+        if (key.equals("home")) return "Home";
+        if (key.equals("settings")) return "Settings";
+        if (key.equals("language")) return "Language";
+        if (key.equals("openHub")) return "Open Avatar Hub";
+        if (key.equals("clearCache")) return "Clear cache";
+        if (key.equals("cacheCleared")) return "Cache cleared";
+        if (key.equals("backHome")) return "Back to home";
         return key;
     }
+
     private String languageName() { if (language.equals("es")) return "Español"; if (language.equals("zh")) return "中文"; if (language.equals("ja")) return "日本語"; if (language.equals("de")) return "Deutsch"; if (language.equals("fr")) return "Français"; if (language.equals("pt")) return "Português"; return "English"; }
     private void cycleLanguage() {
         String[] langs={"en","es","zh","ja","de","fr","pt"};
